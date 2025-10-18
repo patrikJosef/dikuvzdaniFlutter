@@ -30,9 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  auto_size_text:
+  gesture_x_detector: ^1.1.1
   path_provider: ^2.0.0
   html: ^0.15.0
+  url_launcher: ^6.1.0
 
 
 

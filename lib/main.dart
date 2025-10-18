@@ -5,21 +5,14 @@ import 'dart:io';
 import 'dart:async';
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as html_dom;
-
-
-
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-
-
 class MyApp extends StatelessWidget {
-
   const MyApp({Key? key}) : super(key: key);
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +41,7 @@ class _MainActivityState extends State<MainActivity> {
 
   String _currentView = 'home';
   double _scaleFactor = 1.0;
+  double _baseScaleFactor = 1.0;
   bool _sendMailChecked = false;
 
   static const String taskListFilename = 'taskList.txt';
@@ -59,6 +53,93 @@ class _MainActivityState extends State<MainActivity> {
     super.initState();
     _loadFiles();
   }
+
+  Widget _colorPicker(TextEditingController controller) {
+    return DropdownButton<String>(
+      dropdownColor: Colors.grey[900],
+      hint: const Text('Barva', style: TextStyle(color: Colors.white)),
+      items: <String>['red', 'blue', 'green', 'orange', 'purple', 'black']
+          .map((color) => DropdownMenuItem<String>(
+        value: color,
+        child: Text(
+          color,
+          style: TextStyle(color: _parseColor(color)),
+        ),
+      ))
+          .toList(),
+      onChanged: (String? selectedColor) {
+        if (selectedColor != null) {
+          _wrapSelectionWith(controller, '<font color="$selectedColor">', '</font>');
+        }
+      },
+    );
+  }
+
+  Color _parseColor(String colorStr) {
+    switch (colorStr) {
+      case 'red':
+        return Colors.red;
+      case 'blue':
+        return Colors.blue;
+      case 'green':
+        return Colors.green;
+      case 'orange':
+        return Colors.orange;
+      case 'purple':
+        return Colors.purple;
+      case 'black':
+        return Colors.black;
+      default:
+        return Colors.white;
+    }
+  }
+
+
+  Widget _htmlButton(String label, VoidCallback onPressed) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.grey[800],
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+      ),
+      onPressed: onPressed,
+      child: Text(label),
+    );
+  }
+
+
+
+  void _wrapSelectionWith(TextEditingController controller, String startTag, String endTag) {
+    final text = controller.text;
+    final selection = controller.selection;
+
+    if (!selection.isValid || selection.isCollapsed) return;
+
+    final selectedText = selection.textInside(text);
+    final before = selection.textBefore(text);
+    final after = selection.textAfter(text);
+
+    final newText = '$before$startTag$selectedText$endTag$after';
+
+    controller.text = newText;
+    controller.selection = TextSelection.collapsed(offset: (before + startTag + selectedText + endTag).length);
+  }
+
+  void _insertLink(TextEditingController controller) {
+    final selection = controller.selection;
+    final selectedText = controller.selection.textInside(controller.text);
+    final url = 'https://'; // nebo otevřít dialog
+
+    final link = '<a href="$url">$selectedText</a>';
+    final before = controller.selection.textBefore(controller.text);
+    final after = controller.selection.textAfter(controller.text);
+
+    controller.text = '$before$link$after';
+    controller.selection = TextSelection.collapsed(offset: (before + link).length);
+  }
+
+
+
 
   Future<void> _loadFiles() async {
     final taskList = await FileUtils.readFromFile(taskListFilename);
@@ -103,6 +184,8 @@ class _MainActivityState extends State<MainActivity> {
 
   @override
   Widget build(BuildContext context) {
+    bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
@@ -111,10 +194,8 @@ class _MainActivityState extends State<MainActivity> {
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          _buildButtonBar(),
-          Expanded(
-            child: _buildMainContent(),
-          ),
+          if (!isKeyboardVisible) _buildButtonBar(),
+          Expanded(child: _buildMainContent()),
         ],
       ),
     );
@@ -126,10 +207,10 @@ class _MainActivityState extends State<MainActivity> {
       child: GridView.count(
         crossAxisCount: 4,
         shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(),
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 2, // čtvercové tlačítka
+        childAspectRatio: 2,
         children: [
           _NavButton('Přehled', _clickHome),
           _NavButton('Modlitby', () => _setView('prayers')),
@@ -147,8 +228,6 @@ class _MainActivityState extends State<MainActivity> {
       ),
     );
   }
-
-
 
   void _setView(String view) {
     setState(() => _currentView = view);
@@ -182,20 +261,43 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   Widget _buildHomeView() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SelectableText(
+    return GestureDetector(
+      onScaleStart: (details) {
+        _baseScaleFactor = _scaleFactor;
+      },
+      onScaleUpdate: (details) {
+        setState(() {
+          _scaleFactor = (_baseScaleFactor * details.scale).clamp(0.5, 3.0);
+        });
+      },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: HtmlText(
           '${_taskListController.text}\n\n${_peopleListController.text}',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 19 * _scaleFactor,
-            height: 1.5,
-          ),
+          scaleFactor: _scaleFactor,
         ),
       ),
     );
   }
+
+  Widget _buildHtmlToolbar(TextEditingController controller) {
+    return Container(
+      color: Colors.grey[900],
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          _htmlButton('B', () => _wrapSelectionWith(controller, '<b>', '</b>')),
+          _htmlButton('I', () => _wrapSelectionWith(controller, '<i>', '</i>')),
+          _htmlButton('🔗', () => _insertLink(controller)),
+          _colorPicker(controller),
+          const Spacer(),
+          const Text('HTML nástroje', style: TextStyle(color: Colors.white70)),
+        ],
+      ),
+    );
+  }
+
+
 
   Widget _buildEditableView(String type) {
     final controller = type == 'examination'
@@ -204,6 +306,7 @@ class _MainActivityState extends State<MainActivity> {
 
     return Column(
       children: [
+        if (type == 'peopleList') _buildHtmlToolbar(controller),
         Expanded(
           child: TextField(
             controller: controller,
@@ -241,6 +344,7 @@ class _MainActivityState extends State<MainActivity> {
     );
   }
 
+
   Widget _buildTextView(String viewId) {
     return FutureBuilder<String>(
       future: rootBundle.loadString('assets/texts/$viewId.txt'),
@@ -248,12 +352,22 @@ class _MainActivityState extends State<MainActivity> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: HtmlText(
-              snapshot.data ?? '',
-              scaleFactor: _scaleFactor,
+        return GestureDetector(
+          onScaleUpdate: (details) {
+            setState(() {
+              _scaleFactor = (_baseScaleFactor * details.scale).clamp(0.5, 3.0);
+            });
+          },
+          onScaleEnd: (details) {
+            _baseScaleFactor = _scaleFactor;
+          },
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: HtmlText(
+                snapshot.data ?? '',
+                scaleFactor: _scaleFactor,
+              ),
             ),
           ),
         );
@@ -279,12 +393,12 @@ Widget _NavButton(String label, VoidCallback onPressed) {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      padding: EdgeInsets.zero, // žádné extra mezery
-      minimumSize: const Size(0, 48), // poloviční výška tlačítka
+      padding: EdgeInsets.zero,
+      minimumSize: const Size(0, 48),
     ),
     child: Center(
       child: FittedBox(
-        fit: BoxFit.scaleDown, // automaticky zmenší text
+        fit: BoxFit.scaleDown,
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Text(
@@ -329,7 +443,7 @@ class HtmlText extends StatelessWidget {
           );
         }
       } else if (node is html_dom.Element) {
-        children.add(_buildElement(node as html_dom.Element));
+        children.add(_buildElement(node));
       }
     }
 
@@ -341,6 +455,20 @@ class HtmlText extends StatelessWidget {
 
   Widget _buildElement(html_dom.Element element) {
     switch (element.localName) {
+      case 'a':
+        final href = element.attributes['href'] ?? '';
+        return GestureDetector(
+          onTap: () => _launchUrl(href),
+          child: Text(
+            element.text,
+            style: TextStyle(
+              color: Colors.lightBlueAccent,
+              fontSize: 19 * scaleFactor,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        );
+
       case 'b':
       case 'strong':
         return Text(
@@ -351,6 +479,7 @@ class HtmlText extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         );
+
       case 'i':
       case 'em':
         return Text(
@@ -361,8 +490,10 @@ class HtmlText extends StatelessWidget {
             fontStyle: FontStyle.italic,
           ),
         );
+
       case 'br':
         return const SizedBox(height: 8);
+
       case 'font':
         final colorAttr = element.attributes['color'] ?? 'white';
         final color = _parseColor(colorAttr);
@@ -373,6 +504,7 @@ class HtmlText extends StatelessWidget {
             fontSize: 19 * scaleFactor,
           ),
         );
+
       case 'p':
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -384,6 +516,7 @@ class HtmlText extends StatelessWidget {
             ),
           ),
         );
+
       default:
         return Text(
           element.text,
@@ -395,11 +528,22 @@ class HtmlText extends StatelessWidget {
     }
   }
 
-  Color _parseColor(String colorStr) {
-    // Odstranit # pokud je na začátku
-    String cleanColor = colorStr.replaceFirst('#', '');
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(_normalizeUrl(url));
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      debugPrint('Nepodařilo se otevřít odkaz: $uri');
+    }
+  }
 
-    // Pojmenované barvy
+  String _normalizeUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return 'https://$url';
+  }
+
+  Color _parseColor(String colorStr) {
+    String cleanColor = colorStr.replaceFirst('#', '');
     final colors = {
       'red': Colors.red,
       'blue': Colors.blue,
@@ -413,16 +557,14 @@ class HtmlText extends StatelessWidget {
       'grey': Colors.grey,
     };
 
-    // Pokud je pojmenovaná barva
     if (colors.containsKey(cleanColor.toLowerCase())) {
       return colors[cleanColor.toLowerCase()]!;
     }
 
-    // Pokud je hex kód
     if (cleanColor.length == 6) {
       try {
         return Color(int.parse('FF$cleanColor', radix: 16));
-      } catch (e) {
+      } catch (_) {
         return Colors.white;
       }
     }
@@ -430,6 +572,7 @@ class HtmlText extends StatelessWidget {
     return Colors.white;
   }
 }
+
 
 class FileUtils {
   static Future<String> readFromFile(String fileName) async {
@@ -439,7 +582,7 @@ class FileUtils {
 
       if (!await file.exists()) {
         if (fileName == peopleListFilename) {
-          return '<font color="red" size="10pt"> escriva.org/cs      &nbsp;&nbsp; opusdei.cz    &nbsp;&nbsp;  catholica.cz &nbsp;&nbsp; <br/><br/>kalendar.katolik.cz &nbsp;&nbsp; studiovox.cz</font>\nCor Mariae dulcissimum, iter para tutum';
+          return 'escriva.org/cs &nbsp;&nbsp; <a href="opusdei.cz">Opus Dei</a>    opusdei.cz &nbsp;&nbsp; catholica.cz<br/><br/>kalendar.katolik.cz &nbsp;&nbsp; studiovox.cz\nCor Mariae dulcissimum, iter para tutum';
         }
         return '';
       }
@@ -447,7 +590,7 @@ class FileUtils {
       return await file.readAsString();
     } catch (e) {
       if (fileName == peopleListFilename) {
-        return '<font color="red" size="10pt"> escriva.org/cs      &nbsp;&nbsp; opusdei.cz    &nbsp;&nbsp;  catholica.cz &nbsp;&nbsp; <br/><br/>kalendar.katolik.cz &nbsp;&nbsp; studiovox.cz</font>\nCor Mariae dulcissimum, iter para tutum';
+        return 'escriva.org/cs &nbsp;&nbsp; <a href="opusdei.cz">Opus Dei</a>   opusdei.cz &nbsp;&nbsp; catholica.cz<br/><br/>kalendar.katolik.cz &nbsp;&nbsp; studiovox.cz\nCor Mariae dulcissimum, iter para tutum';
       }
       return '';
     }
