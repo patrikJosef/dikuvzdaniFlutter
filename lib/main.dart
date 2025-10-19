@@ -61,6 +61,8 @@ class _MainActivityState extends State<MainActivity> {
   double _baseScaleFactor = 1.0;
   bool _sendMailChecked = false;
   String _dailyMotto = '';
+  Color barvaTextuNavTlacitek = Colors.white;
+  Color barvaTextuFunTlacitek = Colors.black;
 
   static const String taskListFilename = 'taskList.txt';
   static const String notesFilename = 'notes.txt';
@@ -152,11 +154,6 @@ class _MainActivityState extends State<MainActivity> {
             )
         ),
       ),
-
-
-
-
-
       backgroundColor: Colors.black,
       body: Column(
         children: [
@@ -178,18 +175,18 @@ class _MainActivityState extends State<MainActivity> {
         crossAxisSpacing: 6, // ⬅️ menší mezery
         childAspectRatio: 2.67,
         children: [
-          _NavButton('Úmysly', _clickHome, Colors.black),
-          _NavButton('Modlitby', () => _setView('prayers'),Colors.black),
-          _NavButton('2. Žalm', () => _setView('psalm2'),Colors.black),
-          _NavButton('Adoro te', () => _setView('adoro'),Colors.black),
-          _NavButton('Trium', () => _setView('trium'),Colors.black),
-          _NavButton('Quicumque', () => _setView('quicumque'),Colors.black),
-          _NavButton('Litanie', () => _setView('litanie'),Colors.black),
-          _NavButton('Přede mší', () => _setView('beforeMass'),Colors.black),
-          _NavButton('Po mši', () => _setView('afterMass'),Colors.black),
-          _NavButton('Při mši', () => _setView('onMass'),Colors.black),
-          _NavButton('Poznámky', () => _setView('notes'),Colors.white),
-          _NavButton('Úmysly', () => _setView('intentions'),Colors.white),
+          _NavButton('Úmysly', _clickHome, barvaTextuNavTlacitek),
+          _NavButton('Modlitby', () => _setView('prayers'),barvaTextuNavTlacitek),
+          _NavButton('2. Žalm', () => _setView('psalm2'),barvaTextuNavTlacitek),
+          _NavButton('Adoro te', () => _setView('adoro'),barvaTextuNavTlacitek),
+          _NavButton('Trium', () => _setView('trium'),barvaTextuNavTlacitek),
+          _NavButton('Quicumque', () => _setView('quicumque'),barvaTextuNavTlacitek),
+          _NavButton('Litanie', () => _setView('litanie'),barvaTextuNavTlacitek),
+          _NavButton('Přede mší', () => _setView('beforeMass'),barvaTextuNavTlacitek),
+          _NavButton('Po mši', () => _setView('afterMass'),barvaTextuNavTlacitek),
+          _NavButton('Při mši', () => _setView('onMass'),barvaTextuNavTlacitek),
+          _NavButton('Poznámky', () => _setView('notes'),barvaTextuFunTlacitek),
+          _NavButton('Úmysly', () => _setView('intentions'),barvaTextuFunTlacitek),
         ],
       ),
     );
@@ -288,7 +285,7 @@ class _MainActivityState extends State<MainActivity> {
                 onPressed: _saveFiles,
                 style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blueGrey,
-                    foregroundColor: Colors.white,
+                    foregroundColor: barvaTextuFunTlacitek,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),

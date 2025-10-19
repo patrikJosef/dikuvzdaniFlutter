@@ -1,5 +1,3 @@
-
-
 <b>Svatý Michaeli, archanděli</b>,
 braň nás v boji!
 Proti zlobě a úkladům ďáblovým budiž nám záštitou,
@@ -10,7 +8,8 @@ kteří ke zkáze duší světem obcházejí,
 božskou mocí do pekla svrhni.
 Amen.
 
-<b>Sancte Michael Archángele</b>, Defénde nos in proélio,
+<b>Sancte Michael Archángele</b>,
+Defénde nos in proélio,
 Contra nequítiam et insídias diáboli esto præsídium.
 Imperet illi Deus, súpplices deprecámur:
 tuque, princeps milítiæ cæléstis,
@@ -34,7 +33,6 @@ Dobrá Matko Vtěleného Slova,
 neodvracej se od mých slov, 
 ale slyš je a vyslyš.Amen.
 
-
 <b>Memoráre</b>, o piíssima Virgo María,
 non esse audítum a sæculo,
 quemquam ad tua curréntem præsidia,
@@ -51,11 +49,10 @@ verba mea despícere;
 sed áudi propítia et exáudi.
 Amen.
 
-
 <b>Modlitba před duchovní četbou</b>
 <font color="#FF0000">V./</font> Přijď Duchu svatý, naplň srdce svých věrných a zapal v nich
 oheň své lásky. Sešli svého Ducha a všechno bude stvořeno.
-<font color="#FF0000">L./</font> Aobnovíš tvář země.
+<font color="#FF0000">L./</font> A obnovíš tvář země.
 <font color="#FF0000">V./</font> <b>Modleme se:</b>
 Bože, Ty jsi srdce svých věřících Duchem svatým
 osvítil a poučil. Dej, ať v Tvém Duchu správně smýšlíme a vždy se
@@ -69,6 +66,7 @@ in eis ignem accénde. Emítte Spíritum tuum et creabúntur.
 docuísti: da nobis in eódem Spíritu recta sápere, et de eius semper
 consolatióne gaudére. Per Christum Dóminum nostrum.
 <font color="#FF0000">L./</font> Amen.
+
 <b>Modlitba po duchovní četbě</b>
 <font color="#FF0000">V./</font> Děkujeme Ti, všemohoucí Bože, za všechna Tvá dobrodiní.
 Neboť Ty žiješ a kraluješ na věky věků. 
@@ -81,6 +79,7 @@ tuis. Qui vivis et regnas in sáecula saeculórum.
 Můj Pane a Bože, pevně věřím, že jsi zde, že mě vidíš a slyšís, klaním se Ti s hlubokou úctou, prosím o odpuštění svých hríchů a o milost, abych vykonal(a) s užitkem tuto chvíli modlitby.
 
 Moje neposkvrněná Matko, svatý Josefe, můj otče a pane, můj anděli strážný, orodujte za mě.
+
 <b>Modlitba po rozjímání</b>
 Děkuji Ti můj Bože, za dobrá předsevzetí, náklonosti a vnuknutí, která jsi mě udělil v tomto rozjímání, prosím Tě o pomoc, abych je uvedl(a) ve skutek.
 Moje neposkvrněná Matko, svatý Josefe, můj otče a pane, můj anděli strážný, orodujte za mě.
@@ -91,6 +90,7 @@ Chtěl(a) bych tě, Pane, přijmout s takovou čistotou, pokorou a oddaností, s
 <b>Požehnání na cestu</b>
 Na přímluvu blahoslavené Panny Marie ať je Pán s námi na naší cestě a jeho andělé ať nás provázejí.
 Ve jménu Otce i Syna i Ducha svatého. Amen.
+
 Beata Maria in­ter­ce­dénte, bene ambulémus (ámbulem, ámbules, ambulétis): et Dóminus sit in itínere nostro (meo, tuo, vestro), et Ángeli eius comiténtur nobíscum (mecum, tecum, vobíscum).
 In nómine Patris, et Fílii, et Spíritus Sancti. Amen.
 
