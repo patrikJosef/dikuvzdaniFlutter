@@ -307,7 +307,7 @@ class _MainActivityState extends State<MainActivity> {
               ElevatedButton(
                 onPressed: _saveFiles,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueGrey,
+                  backgroundColor: Colors.amber,
                   foregroundColor: barvaTextuFunTlacitek,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -368,9 +368,13 @@ class _MainActivityState extends State<MainActivity> {
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[700],
+                        backgroundColor: Colors.blueGrey,
+                        foregroundColor: barvaTextuNavTlacitek,
                       ),
-                      child: const Text('ZRUŠIT'),
+                      child: const Text('ZRUŠIT',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),),
                     ),
                     ElevatedButton(
                       onPressed: () async {
@@ -392,11 +396,15 @@ class _MainActivityState extends State<MainActivity> {
                           ),
                         );
                       },
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.amber,
                         foregroundColor: Colors.black,
                       ),
-                      child: const Text('ULOŽIT'),
+                      child: const Text('ULOŽIT',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        )),
                     ),
                   ],
                 ),
