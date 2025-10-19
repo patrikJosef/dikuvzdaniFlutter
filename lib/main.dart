@@ -7,10 +7,16 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/gestures.dart';
 import 'package:html/dom.dart' as dom;
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:share_plus/share_plus.dart';
+
 
 void main() {
   runApp(const MyApp());
 }
+
+// 🔵 Sdílená barva pro odkazy
+const linkColor = Colors.lightBlueAccent;
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -24,6 +30,16 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
       ),
       home: const MainActivity(),
+      locale: const Locale('cs'), // čeština
+      supportedLocales: const [
+        Locale('cs'), // čeština
+        Locale('en'), // angličtina, pokud chceš fallback
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
     );
   }
 }
@@ -37,62 +53,110 @@ class MainActivity extends StatefulWidget {
 
 class _MainActivityState extends State<MainActivity> {
   final TextEditingController _taskListController = TextEditingController();
-  final TextEditingController _examinationController = TextEditingController();
-  final TextEditingController _peopleListController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
+  final TextEditingController _intentionsController = TextEditingController();
 
   String _currentView = 'home';
   double _scaleFactor = 1.0;
   double _baseScaleFactor = 1.0;
   bool _sendMailChecked = false;
+  String _dailyMotto = '';
 
   static const String taskListFilename = 'taskList.txt';
-  static const String examinationFilename = 'examination.txt';
-  static const String peopleListFilename = 'peopleList.txt';
+  static const String notesFilename = 'notes.txt';
+  static const String intentionsFilename = 'intentions.txt';
 
   @override
   void initState() {
     super.initState();
     _loadFiles();
+    _loadDailyMotto();
   }
 
   Future<void> _loadFiles() async {
     final taskList = await FileUtils.readFromFile(taskListFilename);
-    final examination = await FileUtils.readFromFile(examinationFilename);
-    final peopleList = await FileUtils.readFromFile(peopleListFilename);
+    final notes = await FileUtils.readFromFile(notesFilename);
+    final intentions = await FileUtils.readFromFile(intentionsFilename);
 
     setState(() {
       _taskListController.text = taskList;
-      _examinationController.text = examination;
-      _peopleListController.text = peopleList;
+      _notesController.text = notes;
+      _intentionsController.text = intentions;
     });
   }
 
+  Future<void> _loadDailyMotto() async {
+    try {
+      final content = await rootBundle.loadString('assets/moznosti.txt');
+      final lines = content.split('\n').where((line) => line.trim().isNotEmpty).toList();
+      final dayOfWeek = DateTime.now().weekday; // 1=Monday, 7=Sunday
+
+      if (lines.isNotEmpty) {
+        final index = (dayOfWeek - 1).clamp(0, lines.length - 1);
+        setState(() {
+          _dailyMotto = lines[index];
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _dailyMotto = 'Cor Mariae dulcissimum, iter para tutum';
+      });
+    }
+  }
+
+
   Future<void> _saveFiles() async {
     await FileUtils.writeToFile(_taskListController.text, taskListFilename);
-    await FileUtils.writeToFile(_examinationController.text, examinationFilename);
-    await FileUtils.writeToFile(_peopleListController.text, peopleListFilename);
+    await FileUtils.writeToFile(_notesController.text, notesFilename);
+    await FileUtils.writeToFile(_intentionsController.text, intentionsFilename);
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Poznámky i úmysly uloženy'),
-        backgroundColor: Colors.red,
+        content: Text('POZNÁMKY I ÚMYSLY ULOŽENY'),
+        backgroundColor: Colors.blueGrey,
         duration: Duration(seconds: 2),
       ),
     );
 
     if (_sendMailChecked) {
+      // Spojíme obsah všech tří souborů pro sdílení
+      final shareContent =
+          '${_taskListController.text}\n\n${_notesController.text}\n\n${_intentionsController.text}';
+
+      await Share.share(
+        shareContent,
+        subject: 'ZalohaDikuvzdani',
+      );
+
       setState(() => _sendMailChecked = false);
     }
+
   }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(35),
+        child: AppBar(
+            title: RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                  text: _dailyMotto.isNotEmpty
+                      ? _dailyMotto
+                      : 'Cor Mariae dulcissimum, iter para tutum',
+                  style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic)
+              ),
+            )
+        ),
       ),
+
+
+
+
+
       backgroundColor: Colors.black,
       body: Column(
         children: [
@@ -105,27 +169,27 @@ class _MainActivityState extends State<MainActivity> {
 
   Widget _buildButtonBar() {
     return Padding(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.fromLTRB(8, 5, 8, 8),
       child: GridView.count(
         crossAxisCount: 4,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 2,
+        mainAxisSpacing: 6, // ⬅️ menší mezery
+        crossAxisSpacing: 6, // ⬅️ menší mezery
+        childAspectRatio: 2.67,
         children: [
-          _NavButton('Přehled', _clickHome),
-          _NavButton('Modlitby', () => _setView('prayers')),
-          _NavButton('2. Žalm', () => _setView('psalm2')),
-          _NavButton('Adoro te', () => _setView('adoro')),
-          _NavButton('Trium', () => _setView('trium')),
-          _NavButton('Quicum', () => _setView('quicumque')),
-          _NavButton('Litanie', () => _setView('triumLat')),
-          _NavButton('Před mší', () => _setView('beforeMass')),
-          _NavButton('Po mši', () => _setView('afterMass')),
-          _NavButton('Při mši', () => _setView('onMass')),
-          _NavButton('Zpytování', () => _setView('examination')),
-          _NavButton('Lidé', () => _setView('peopleList')),
+          _NavButton('Úmysly', _clickHome, Colors.black),
+          _NavButton('Modlitby', () => _setView('prayers'),Colors.black),
+          _NavButton('2. Žalm', () => _setView('psalm2'),Colors.black),
+          _NavButton('Adoro te', () => _setView('adoro'),Colors.black),
+          _NavButton('Trium', () => _setView('trium'),Colors.black),
+          _NavButton('Quicumque', () => _setView('quicumque'),Colors.black),
+          _NavButton('Litanie', () => _setView('litanie'),Colors.black),
+          _NavButton('Přede mší', () => _setView('beforeMass'),Colors.black),
+          _NavButton('Po mši', () => _setView('afterMass'),Colors.black),
+          _NavButton('Při mši', () => _setView('onMass'),Colors.black),
+          _NavButton('Poznámky', () => _setView('notes'),Colors.white),
+          _NavButton('Úmysly', () => _setView('intentions'),Colors.white),
         ],
       ),
     );
@@ -143,10 +207,10 @@ class _MainActivityState extends State<MainActivity> {
     switch (_currentView) {
       case 'home':
         return _buildHomeView();
-      case 'examination':
-        return _buildEditableView('examination');
-      case 'peopleList':
-        return _buildEditableView('peopleList');
+      case 'notes':
+        return _buildEditableView('notes');
+      case 'intentions':
+        return _buildEditableView('intentions');
       case 'psalm2':
       case 'adoro':
       case 'trium':
@@ -155,7 +219,7 @@ class _MainActivityState extends State<MainActivity> {
       case 'beforeMass':
       case 'afterMass':
       case 'onMass':
-      case 'triumLat':
+      case 'litanie':
         return _buildTextView(_currentView);
       default:
         return _buildHomeView();
@@ -163,23 +227,36 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   Widget _buildHomeView() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: HtmlText(
-        '${_taskListController.text}\n\n${_peopleListController.text}',
-        scaleFactor: _scaleFactor,
+    return GestureDetector(
+      onScaleStart: (details) {
+        _baseScaleFactor = _scaleFactor;
+      },
+      onScaleUpdate: (details) {
+        setState(() {
+          _scaleFactor = (_baseScaleFactor * details.scale).clamp(0.5, 3.0);
+        });
+      },
+      onScaleEnd: (details) {
+        _baseScaleFactor = _scaleFactor;
+      },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: HtmlText(
+          '${_taskListController.text}\n\n${_intentionsController.text}',
+          scaleFactor: _scaleFactor,
+        ),
       ),
     );
   }
 
   Widget _buildEditableView(String type) {
-    final controller = type == 'examination'
-        ? _examinationController
-        : _peopleListController;
+    final controller = type == 'notes'
+        ? _notesController
+        : _intentionsController;
 
     return Column(
       children: [
-        if (type == 'peopleList') _buildHtmlToolbar(controller),
+        if (type == 'intentions') _buildHtmlToolbar(controller),
         Expanded(
           child: TextField(
             controller: controller,
@@ -202,14 +279,31 @@ class _MainActivityState extends State<MainActivity> {
                 onChanged: (val) {
                   setState(() => _sendMailChecked = val ?? false);
                 },
+                fillColor: WidgetStatePropertyAll(Colors.white),
+                checkColor: Colors.black,
               ),
-              const Text('Zálohovat', style: TextStyle(color: Colors.white)),
+              const Text('ZÁLOHOVAT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               const Spacer(),
               ElevatedButton(
                 onPressed: _saveFiles,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('Uložit'),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('ULOŽIT',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold, // tučný text
+                  ),),
+
+
               ),
+
+
+
+
+
             ],
           ),
         ),
@@ -338,18 +432,18 @@ class _MainActivityState extends State<MainActivity> {
   @override
   void dispose() {
     _taskListController.dispose();
-    _examinationController.dispose();
-    _peopleListController.dispose();
+    _notesController.dispose();
+    _intentionsController.dispose();
     super.dispose();
   }
 }
 
-Widget _NavButton(String label, VoidCallback onPressed) {
+Widget _NavButton(String label, VoidCallback onPressed, Color textColor) {
   return ElevatedButton(
     onPressed: onPressed,
     style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
+      backgroundColor: Colors.blueGrey, // ⚪ bílé tlačítko
+      foregroundColor: textColor, // ⚫ černý text
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -392,9 +486,12 @@ class HtmlText extends StatelessWidget {
 
     final textSpan = _parseBody(body);
 
-    return RichText(
-      text: textSpan,
-      softWrap: true,
+    return SelectableText.rich(
+      textSpan,
+      textAlign: TextAlign.left,
+      showCursor: false,
+      cursorWidth: 0,
+      enableInteractiveSelection: true,
     );
   }
 
@@ -437,7 +534,7 @@ class HtmlText extends StatelessWidget {
         return TextSpan(
           text: text,
           style: TextStyle(
-            color: Colors.lightBlueAccent,
+            color: linkColor,
             fontSize: 19 * scaleFactor,
             decoration: TextDecoration.underline,
           ),
@@ -472,8 +569,6 @@ class HtmlText extends StatelessWidget {
         final color = _parseColor(colorAttr);
         final text = element.text;
 
-        print('FONT element: color=$colorAttr, text=$text, parsed color=$color');
-
         return TextSpan(
           text: text,
           style: TextStyle(
@@ -503,19 +598,6 @@ class HtmlText extends StatelessWidget {
           ),
         );
     }
-  }
-
-  List<TextSpan> _getChildren(dom.Element element) {
-    final List<TextSpan> children = [];
-
-    for (var node in element.nodes) {
-      final span = _parseNode(node);
-      if (span != null) {
-        children.add(span);
-      }
-    }
-
-    return children;
   }
 
   void _launchUrl(String url) async {
@@ -574,7 +656,7 @@ class FileUtils {
       final file = File('${dir.path}/$fileName');
 
       if (!await file.exists()) {
-        if (fileName == peopleListFilename) {
+        if (fileName == intentionsFilename) {
           return '<a href="https://escriva.org/cs">escriva.org/cs</a> &nbsp;&nbsp; <a href="https://opusdei.cz">Opus Dei</a> &nbsp;&nbsp; <a href="https://catholica.cz">catholica.cz</a><br/><br/><a href="https://kalendar.katolik.cz">kalendar.katolik.cz</a> &nbsp;&nbsp; <a href="https://studiovox.cz">studiovox.cz</a>\n<font color="red">Cor Mariae dulcissimum, iter para tutum</font>';
         }
         return '';
@@ -582,8 +664,9 @@ class FileUtils {
 
       return await file.readAsString();
     } catch (e) {
-      if (fileName == peopleListFilename) {
-        return '<a href="https://escriva.org/cs">escriva.org/cs</a> &nbsp;&nbsp; <a href="https://opusdei.cz">Opus Dei</a> &nbsp;&nbsp; <a href="https://catholica.cz">catholica.cz</a><br/><br/><a href="https://kalendar.katolik.cz">kalendar.katolik.cz</a> &nbsp;&nbsp; <a href="https://studiovox.cz">studiovox.cz</a>\n<font color="red">Cor Mariae dulcissimum, iter para tutum</font>';
+      if (fileName == intentionsFilename) {
+        return '<a href="https://escriva.org/cs">escriva.org/cs</a> &nbsp;&nbsp; <a href="https://opusdei.cz">Opus Dei</a> &nbsp;&nbsp; <a href="https://catholica.cz">catholica.cz</a><br/><br/><a href="https://kalendar.cz"></a>';
+
       }
       return '';
     }
@@ -599,5 +682,5 @@ class FileUtils {
     }
   }
 
-  static const String peopleListFilename = 'peopleList.txt';
+  static const String intentionsFilename = 'intentions.txt';
 }
