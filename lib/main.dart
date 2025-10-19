@@ -10,12 +10,10 @@ import 'package:html/dom.dart' as dom;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
-
 void main() {
   runApp(const MyApp());
 }
 
-// 🔵 Sdílená barva pro odkazy
 const linkColor = Colors.lightBlueAccent;
 
 class MyApp extends StatelessWidget {
@@ -30,10 +28,10 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
       ),
       home: const MainActivity(),
-      locale: const Locale('cs'), // čeština
+      locale: const Locale('cs'),
       supportedLocales: const [
-        Locale('cs'), // čeština
-        Locale('en'), // angličtina, pokud chceš fallback
+        Locale('cs'),
+        Locale('en'),
       ],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -64,15 +62,12 @@ class _MainActivityState extends State<MainActivity> {
   Color barvaTextuNavTlacitek = Colors.white;
   Color barvaTextuFunTlacitek = Colors.black;
 
-  static const String taskListFilename = 'taskList.txt';
-  static const String notesFilename = 'notes.txt';
-  static const String intentionsFilename = 'intentions.txt';
-
   @override
   void initState() {
     super.initState();
     _loadFiles();
     _loadDailyMotto();
+    _loadFontSize();
   }
 
   Future<void> _loadFiles() async {
@@ -87,11 +82,29 @@ class _MainActivityState extends State<MainActivity> {
     });
   }
 
+  Future<void> _loadFontSize() async {
+    try {
+      final content = await FileUtils.readFromFile(moznostiFilename);
+      final lines = content.split('\n');
+
+      if (lines.length > 7) {
+        final sizeStr = lines[7].trim();
+        final size = double.tryParse(sizeStr) ?? 1.0;
+        setState(() {
+          _scaleFactor = size.clamp(0.5, 3.0);
+          _baseScaleFactor = _scaleFactor;
+        });
+      }
+    } catch (e) {
+      // Default value already set
+    }
+  }
+
   Future<void> _loadDailyMotto() async {
     try {
-      final content = await rootBundle.loadString('assets/moznosti.txt');
+      final content = await FileUtils.readFromFile(moznostiFilename);
       final lines = content.split('\n').where((line) => line.trim().isNotEmpty).toList();
-      final dayOfWeek = DateTime.now().weekday; // 1=Monday, 7=Sunday
+      final dayOfWeek = DateTime.now().weekday;
 
       if (lines.isNotEmpty) {
         final index = (dayOfWeek - 1).clamp(0, lines.length - 1);
@@ -105,7 +118,6 @@ class _MainActivityState extends State<MainActivity> {
       });
     }
   }
-
 
   Future<void> _saveFiles() async {
     await FileUtils.writeToFile(_taskListController.text, taskListFilename);
@@ -122,7 +134,6 @@ class _MainActivityState extends State<MainActivity> {
     );
 
     if (_sendMailChecked) {
-      // Spojíme obsah všech tří souborů pro sdílení
       final shareContent =
           '${_taskListController.text}\n\n${_notesController.text}\n\n${_intentionsController.text}';
 
@@ -133,9 +144,7 @@ class _MainActivityState extends State<MainActivity> {
 
       setState(() => _sendMailChecked = false);
     }
-
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -171,8 +180,8 @@ class _MainActivityState extends State<MainActivity> {
         crossAxisCount: 4,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 6, // ⬅️ menší mezery
-        crossAxisSpacing: 6, // ⬅️ menší mezery
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
         childAspectRatio: 2.67,
         children: [
           _NavButton('Úmysly', _clickHome, barvaTextuNavTlacitek),
@@ -282,29 +291,198 @@ class _MainActivityState extends State<MainActivity> {
               const Text('ZÁLOHOVAT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               const Spacer(),
               ElevatedButton(
+                onPressed: () => _showMoznostiDialog(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('NASTAVENÍ',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
                 onPressed: _saveFiles,
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey,
-                    foregroundColor: barvaTextuFunTlacitek,
-                    shape: RoundedRectangleBorder(
+                  backgroundColor: Colors.blueGrey,
+                  foregroundColor: barvaTextuFunTlacitek,
+                  shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text('ULOŽIT',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold, // tučný text
+                    fontWeight: FontWeight.bold,
                   ),),
-
-
               ),
-
-
-
-
-
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _showMoznostiDialog() async {
+    final content = await FileUtils.readFromFile(moznostiFilename);
+    final lines = content.split('\n');
+
+    final controllers = List.generate(7, (i) {
+      final controller = TextEditingController();
+      if (i < lines.length) {
+        controller.text = lines[i];
+      }
+      return controller;
+    });
+
+    String selectedSize = '1.0';
+    if (lines.length > 7) {
+      selectedSize = lines[7].trim();
+    }
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.grey[900],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'NASTAVENÍ',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[700],
+                      ),
+                      child: const Text('ZRUŠIT'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final newLines = [
+                          ...controllers.map((c) => c.text),
+                          selectedSize,
+                        ];
+                        final newContent = newLines.join('\n');
+                        await FileUtils.writeToFile(newContent, moznostiFilename);
+                        await _loadDailyMotto();
+                        await _loadFontSize();
+
+                        if (!mounted) return;
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('NASTAVENÍ ULOŽENO'),
+                            backgroundColor: Colors.blueGrey,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                      ),
+                      child: const Text('ULOŽIT'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Velikost textu',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      StatefulBuilder(
+                        builder: (context, setStateDropdown) {
+                          return DropdownButton<String>(
+                            value: selectedSize,
+                            dropdownColor: Colors.grey[800],
+                            isExpanded: true,
+                            items: const [
+                              DropdownMenuItem(value: '0.5', child: Text('0.5x (Velmi malá)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '0.75', child: Text('0.75x (Malá)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '1.0', child: Text('1.0x (Normální)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '1.25', child: Text('1.25x (Větší)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '1.5', child: Text('1.5x (Velká)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '2.0', child: Text('2.0x (Velmi velká)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '3.0', child: Text('3.0x (Obrovská)', style: TextStyle(color: Colors.white))),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setStateDropdown(() {
+                                  selectedSize = value;
+                                });
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ...List.generate(7, (i) {
+                  final days = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
+                  final currentDay = DateTime.now().weekday - 1;
+                  final isToday = i == currentDay;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${days[i]}${isToday ? ' (DNES)' : ''}',
+                          style: TextStyle(
+                            color: isToday ? Colors.amber : Colors.white70,
+                            fontSize: 12,
+                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        TextField(
+                          controller: controllers[i],
+                          maxLines: 2,
+                          style: const TextStyle(color: Colors.black),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -439,8 +617,8 @@ Widget _NavButton(String label, VoidCallback onPressed, Color textColor) {
   return ElevatedButton(
     onPressed: onPressed,
     style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.blueGrey, // ⚪ bílé tlačítko
-      foregroundColor: textColor, // ⚫ černý text
+      backgroundColor: Colors.blueGrey,
+      foregroundColor: textColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -646,6 +824,13 @@ class HtmlText extends StatelessWidget {
   }
 }
 
+// 📄 názvy souborů používaných pro ukládání dat
+const String taskListFilename = 'tasklist.txt';
+const String notesFilename = 'notes.txt';
+const String intentionsFilename = 'intentions.txt';
+const String moznostiFilename = 'moznosti.txt';
+
+
 class FileUtils {
   static Future<String> readFromFile(String fileName) async {
     try {
@@ -653,17 +838,22 @@ class FileUtils {
       final file = File('${dir.path}/$fileName');
 
       if (!await file.exists()) {
-        if (fileName == intentionsFilename) {
+        if (fileName == 'intentions.txt') {
           return '<a href="https://escriva.org/cs">escriva.org/cs</a> &nbsp;&nbsp; <a href="https://opusdei.cz">Opus Dei</a> &nbsp;&nbsp; <a href="https://catholica.cz">catholica.cz</a><br/><br/><a href="https://kalendar.katolik.cz">kalendar.katolik.cz</a> &nbsp;&nbsp; <a href="https://studiovox.cz">studiovox.cz</a>\n<font color="red">Cor Mariae dulcissimum, iter para tutum</font>';
+        }
+        if (fileName == 'moznosti.txt') {
+          return 'Sancta Maria, Mater misericordiae, succurre animabus in purgatorio\nSancte Angele, adiuva nos\nSancte Ioseph, ora pro nobis\nIesu, in te confido\nPer crucem et passionem tuam, Domine, libera nos\nCor Mariae dulcissimum, iter para tutum\nGloria Patri, et Filio, et Spiritui Sancto';
         }
         return '';
       }
 
       return await file.readAsString();
     } catch (e) {
-      if (fileName == intentionsFilename) {
-        return '<a href="https://escriva.org/cs">escriva.org/cs</a> &nbsp;&nbsp; <a href="https://opusdei.cz">Opus Dei</a> &nbsp;&nbsp; <a href="https://catholica.cz">catholica.cz</a><br/><br/><a href="https://kalendar.cz"></a>';
-
+      if (fileName == 'intentions.txt') {
+        return '<a href="https://escriva.org/cs">escriva.org/cs</a>';
+      }
+      if (fileName == 'moznosti.txt') {
+        return 'Cor Mariae dulcissimum, iter para tutum';
       }
       return '';
     }
@@ -678,6 +868,4 @@ class FileUtils {
       print('File write failed: $e');
     }
   }
-
-  static const String intentionsFilename = 'intentions.txt';
 }
