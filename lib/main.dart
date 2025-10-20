@@ -527,7 +527,7 @@ class _MainActivityState extends State<MainActivity> {
     return DropdownButton<String>(
       dropdownColor: Colors.grey[900],
       hint: const Text('Barva', style: TextStyle(color: Colors.white, fontSize: 12)),
-      items: <String>['red', 'blue', 'green', 'orange', 'purple', 'black']
+      items: <String>['red', 'blue', 'green', 'orange', 'purple', 'pink']
           .map((color) => DropdownMenuItem<String>(
         value: color,
         child: Text(
@@ -556,8 +556,8 @@ class _MainActivityState extends State<MainActivity> {
         return Colors.orange;
       case 'purple':
         return Colors.purple;
-      case 'black':
-        return Colors.black;
+      case 'pink':
+        return Colors.pinkAccent;
       default:
         return Colors.white;
     }
@@ -812,7 +812,7 @@ class HtmlText extends StatelessWidget {
       'green': Colors.green,
       'orange': Colors.orange,
       'purple': Colors.purple,
-      'black': Colors.black,
+      'pink': Colors.pinkAccent,
       'white': Colors.white,
       'yellow': Colors.yellow,
       'grey': Colors.grey,
