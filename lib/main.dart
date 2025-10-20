@@ -15,6 +15,9 @@ void main() {
 }
 
 const linkColor = Colors.lightBlueAccent;
+const barvaFunkcnichTlacitekVyberuTextuAKurzoru = Colors.amber;
+const barvaFunkcnichTlacitekVyberuTextuAKurzoruPrusvitnost = Color.fromRGBO(255, 193, 7, 0.3);
+
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -24,6 +27,23 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Modlitební Aplikace',
       theme: ThemeData(
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+          selectionColor: barvaFunkcnichTlacitekVyberuTextuAKurzoruPrusvitnost, // amber s průhledností
+          selectionHandleColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderSide: BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru, width: 2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru),
+          ),
+        ),
+
         primarySwatch: Colors.blue,
         brightness: Brightness.dark,
       ),
@@ -53,6 +73,7 @@ class _MainActivityState extends State<MainActivity> {
   final TextEditingController _taskListController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _intentionsController = TextEditingController();
+
 
   String _currentView = 'home';
   double _scaleFactor = 1.0;
@@ -128,7 +149,7 @@ class _MainActivityState extends State<MainActivity> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('POZNÁMKY I ÚMYSLY ULOŽENY'),
-        backgroundColor: Colors.blueGrey,
+        backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
         duration: Duration(seconds: 2),
       ),
     );
@@ -293,7 +314,7 @@ class _MainActivityState extends State<MainActivity> {
               ElevatedButton(
                 onPressed: () => _showMoznostiDialog(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
+                  backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -307,7 +328,7 @@ class _MainActivityState extends State<MainActivity> {
               ElevatedButton(
                 onPressed: _saveFiles,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
+                  backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                   foregroundColor: barvaTextuFunTlacitek,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -325,24 +346,40 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   Future<void> _showMoznostiDialog() async {
-    final content = await FileUtils.readFromFile(moznostiFilename);
-    final lines = content.split('\n');
+    // 1️⃣ načtení lokálního souboru
+    String content = await FileUtils.readFromFile(moznostiFilename);
+    List<String> lines = content.split('\n');
 
+    // 2️⃣ načtení defaultní verze z assets
+    final defaultContent = await rootBundle.loadString('assets/moznosti.txt');
+    final defaultLines = defaultContent.split('\n');
+
+    // 3️⃣ připravit textové kontrolery pro 7 dní
     final controllers = List.generate(7, (i) {
       final controller = TextEditingController();
-      if (i < lines.length) {
+      if (i < lines.length && lines[i].trim().isNotEmpty) {
         controller.text = lines[i];
+      } else if (i < defaultLines.length) {
+        controller.text = defaultLines[i];
+      } else {
+        controller.text = '';
       }
       return controller;
     });
 
+    // 4️⃣ velikost textu (dropdown)
+    const validSizes = ['0.5','0.75','1.0','1.25','1.5','2.0','3.0'];
     String selectedSize = '1.0';
-    if (lines.length > 7) {
+
+    if (lines.length > 7 && validSizes.contains(lines[7].trim())) {
       selectedSize = lines[7].trim();
+    } else if (defaultLines.length > 7 && validSizes.contains(defaultLines[7].trim())) {
+      selectedSize = defaultLines[7].trim();
     }
 
     if (!mounted) return;
 
+    // 5️⃣ zobrazit dialog
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -362,6 +399,8 @@ class _MainActivityState extends State<MainActivity> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // ❌ ZRUŠIT / ✅ ULOŽIT tlačítka
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -369,12 +408,13 @@ class _MainActivityState extends State<MainActivity> {
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueGrey,
-                        foregroundColor: barvaTextuNavTlacitek,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: const Text('ZRUŠIT',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),),
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     ElevatedButton(
                       onPressed: () async {
@@ -392,23 +432,25 @@ class _MainActivityState extends State<MainActivity> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('NASTAVENÍ ULOŽENO'),
-                            backgroundColor: Colors.blueGrey,
+                            backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                           ),
                         );
                       },
-
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
+                        backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                         foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: const Text('ULOŽIT',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        )),
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
+
+                // 6️⃣ Dropdown pro velikost textu
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12.0),
                   child: Column(
@@ -450,9 +492,10 @@ class _MainActivityState extends State<MainActivity> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+
+                // 7️⃣ Texty pro jednotlivé dny
                 ...List.generate(7, (i) {
-                  final days = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
+                  final days = ['Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota','Neděle'];
                   final currentDay = DateTime.now().weekday - 1;
                   final isToday = i == currentDay;
 
@@ -464,7 +507,7 @@ class _MainActivityState extends State<MainActivity> {
                         Text(
                           '${days[i]}${isToday ? ' (DNES)' : ''}',
                           style: TextStyle(
-                            color: isToday ? Colors.amber : Colors.white70,
+                            color: isToday ? barvaFunkcnichTlacitekVyberuTextuAKurzoru : Colors.white70,
                             fontSize: 12,
                             fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                           ),
@@ -486,6 +529,53 @@ class _MainActivityState extends State<MainActivity> {
                     ),
                   );
                 }),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueGrey,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('ZRUŠIT',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final newLines = [
+                          ...controllers.map((c) => c.text),
+                          selectedSize,
+                        ];
+                        final newContent = newLines.join('\n');
+                        await FileUtils.writeToFile(newContent, moznostiFilename);
+                        await _loadDailyMotto();
+                        await _loadFontSize();
+
+                        if (!mounted) return;
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('NASTAVENÍ ULOŽENO'),
+                            backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('ULOŽIT',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -493,6 +583,8 @@ class _MainActivityState extends State<MainActivity> {
       ),
     );
   }
+
+
 
   Widget _buildHtmlToolbar(TextEditingController controller) {
     return Container(
