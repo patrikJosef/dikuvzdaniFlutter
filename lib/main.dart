@@ -301,16 +301,6 @@ class _MainActivityState extends State<MainActivity> {
           padding: const EdgeInsets.all(8.0),
           child: Row(
             children: [
-              Checkbox(
-                value: _sendMailChecked,
-                onChanged: (val) {
-                  setState(() => _sendMailChecked = val ?? false);
-                },
-                fillColor: WidgetStatePropertyAll(Colors.white),
-                checkColor: Colors.black,
-              ),
-              const Text('ZÁLOHOVAT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              const Spacer(),
               ElevatedButton(
                 onPressed: () => _showMoznostiDialog(),
                 style: ElevatedButton.styleFrom(
@@ -324,7 +314,17 @@ class _MainActivityState extends State<MainActivity> {
                     fontWeight: FontWeight.bold,
                   ),),
               ),
-              const SizedBox(width: 8),
+              const Spacer(),
+              Checkbox(
+                value: _sendMailChecked,
+                onChanged: (val) {
+                  setState(() => _sendMailChecked = val ?? false);
+                },
+                fillColor: WidgetStatePropertyAll(Colors.white),
+                checkColor: Colors.black,
+              ),
+              const Text('ZÁLOHOVAT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              const Spacer(),
               ElevatedButton(
                 onPressed: _saveFiles,
                 style: ElevatedButton.styleFrom(
@@ -616,18 +616,29 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   Widget _colorPicker(TextEditingController controller) {
+    const colorMap = {
+      'red': 'Červená',
+      'blue': 'Modrá',
+      'green': 'Zelená',
+      'orange': 'Oranžová',
+      'purple': 'Fialová',
+      'pink': 'Růžová',
+    };
+
     return DropdownButton<String>(
       dropdownColor: Colors.grey[900],
       hint: const Text('Barva', style: TextStyle(color: Colors.white, fontSize: 12)),
-      items: <String>['red', 'blue', 'green', 'orange', 'purple', 'pink']
-          .map((color) => DropdownMenuItem<String>(
-        value: color,
-        child: Text(
-          color,
-          style: TextStyle(color: _parseColorForToolbar(color)),
-        ),
-      ))
-          .toList(),
+      items: colorMap.entries.map((entry) {
+        final value = entry.key;
+        final label = entry.value;
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(
+            label,
+            style: TextStyle(color: _parseColorForToolbar(value)),
+          ),
+        );
+      }).toList(),
       onChanged: (String? selectedColor) {
         if (selectedColor != null) {
           _wrapSelectionWith(controller, '<font color="$selectedColor">', '</font>');
