@@ -17,7 +17,7 @@ void main() {
 const linkColor = Colors.lightBlueAccent;
 const barvaFunkcnichTlacitekVyberuTextuAKurzoru = Colors.amber;
 const barvaFunkcnichTlacitekVyberuTextuAKurzoruPrusvitnost = Color.fromRGBO(255, 193, 7, 0.3);
-
+const translucentBlue = Color.fromRGBO(3, 169, 244, 0.3); // RGB pro lightBlueAccent
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -25,11 +25,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Modlitební Aplikace',
+      title: 'Díkůvzdání',
       theme: ThemeData(
         textSelectionTheme: const TextSelectionThemeData(
           cursorColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-          selectionColor: barvaFunkcnichTlacitekVyberuTextuAKurzoruPrusvitnost, // amber s průhledností
+          selectionColor: barvaFunkcnichTlacitekVyberuTextuAKurzoruPrusvitnost,
           selectionHandleColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -43,7 +43,6 @@ class MyApp extends StatelessWidget {
             borderSide: BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru),
           ),
         ),
-
         primarySwatch: Colors.blue,
         brightness: Brightness.dark,
       ),
@@ -74,7 +73,6 @@ class _MainActivityState extends State<MainActivity> {
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _intentionsController = TextEditingController();
 
-
   String _currentView = 'home';
   double _scaleFactor = 1.0;
   double _baseScaleFactor = 1.0;
@@ -83,12 +81,28 @@ class _MainActivityState extends State<MainActivity> {
   Color barvaTextuNavTlacitek = Colors.white;
   Color barvaTextuFunTlacitek = Colors.black;
 
+  bool _latin = false; // false = Česky, true = Latinsky
+
   @override
   void initState() {
     super.initState();
     _loadFiles();
     _loadDailyMotto();
     _loadFontSize();
+  }
+
+  String _latinVariant(String path) {
+    if (path.endsWith('.txt')) {
+      return path.replaceFirst('.txt', '_lat.txt');
+    } else {
+      return '${path}_lat';
+    }
+  }
+
+  void _switchLanguage(bool latin) {
+    setState(() {
+      _latin = latin;
+    });
   }
 
   Future<void> _loadFiles() async {
@@ -107,7 +121,6 @@ class _MainActivityState extends State<MainActivity> {
     try {
       final content = await FileUtils.readFromFile(moznostiFilename);
       final lines = content.split('\n');
-
       if (lines.length > 7) {
         final sizeStr = lines[7].trim();
         final size = double.tryParse(sizeStr) ?? 1.0;
@@ -117,7 +130,7 @@ class _MainActivityState extends State<MainActivity> {
         });
       }
     } catch (e) {
-      // Default value already set
+      // Default value
     }
   }
 
@@ -173,21 +186,53 @@ class _MainActivityState extends State<MainActivity> {
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(35),
         child: AppBar(
-            title: RichText(
-              textAlign: TextAlign.center,
-              text: TextSpan(
-                  text: _dailyMotto.isNotEmpty
-                      ? _dailyMotto
-                      : 'Cor Mariae dulcissimum, iter para tutum',
-                  style: TextStyle(fontSize: 15, fontStyle: FontStyle.italic)
-              ),
-            )
+          title: RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              text: _dailyMotto.isNotEmpty ? _dailyMotto : 'Cor Mariae dulcissimum, iter para tutum',
+              style: const TextStyle(fontSize: 15, fontStyle: FontStyle.italic),
+            ),
+          ),
         ),
       ),
       backgroundColor: Colors.black,
       body: Column(
         children: [
           _buildButtonBar(),
+          // Přepínač jazyků
+          // Přepínač jazyků (jen pro statické texty)
+          if (_currentView != 'home' && _currentView !='beforeMass'
+              && _currentView !='afterMass' && _currentView != 'onMass' && _currentView != 'notes' && _currentView != 'intentions')
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _switchLanguage(false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _latin ? Colors.blueGrey : translucentBlue,
+                        foregroundColor: _latin ? Colors.white : Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('ČESKY'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _switchLanguage(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: !_latin ? Colors.blueGrey: translucentBlue,
+                        foregroundColor: !_latin ? Colors.white : Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('LATINSKY'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(child: _buildMainContent()),
         ],
       ),
@@ -196,7 +241,7 @@ class _MainActivityState extends State<MainActivity> {
 
   Widget _buildButtonBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 5, 8, 8),
+      padding: const EdgeInsets.fromLTRB(8, 5, 8, 3),
       child: GridView.count(
         crossAxisCount: 4,
         shrinkWrap: true,
@@ -206,29 +251,24 @@ class _MainActivityState extends State<MainActivity> {
         childAspectRatio: 2.67,
         children: [
           _NavButton('Úmysly', _clickHome, barvaTextuNavTlacitek),
-          _NavButton('Modlitby', () => _setView('prayers'),barvaTextuNavTlacitek),
-          _NavButton('2. Žalm', () => _setView('psalm2'),barvaTextuNavTlacitek),
-          _NavButton('Adoro te', () => _setView('adoro'),barvaTextuNavTlacitek),
-          _NavButton('Trium', () => _setView('trium'),barvaTextuNavTlacitek),
-          _NavButton('Quicumque', () => _setView('quicumque'),barvaTextuNavTlacitek),
-          _NavButton('Litanie', () => _setView('litanie'),barvaTextuNavTlacitek),
-          _NavButton('Přede mší', () => _setView('beforeMass'),barvaTextuNavTlacitek),
-          _NavButton('Po mši', () => _setView('afterMass'),barvaTextuNavTlacitek),
-          _NavButton('Při mši', () => _setView('onMass'),barvaTextuNavTlacitek),
-          _NavButton('Poznámky', () => _setView('notes'),barvaTextuFunTlacitek),
-          _NavButton('Úmysly', () => _setView('intentions'),barvaTextuFunTlacitek),
+          _NavButton('Modlitby', () => _setView('prayers'), barvaTextuNavTlacitek),
+          _NavButton('2. Žalm', () => _setView('psalm2'), barvaTextuNavTlacitek),
+          _NavButton('Adoro te', () => _setView('adoro'), barvaTextuNavTlacitek),
+          _NavButton('Trium', () => _setView('trium'), barvaTextuNavTlacitek),
+          _NavButton('Quicumque', () => _setView('quicumque'), barvaTextuNavTlacitek),
+          _NavButton('Litanie', () => _setView('litanie'), barvaTextuNavTlacitek),
+          _NavButton('Přede mší', () => _setView('beforeMass'), barvaTextuNavTlacitek),
+          _NavButton('Po mši', () => _setView('afterMass'), barvaTextuNavTlacitek),
+          _NavButton('Při mši', () => _setView('onMass'), barvaTextuNavTlacitek),
+          _NavButton('Poznámky', () => _setView('notes'), barvaTextuFunTlacitek),
+          _NavButton('Úmysly', () => _setView('intentions'), barvaTextuFunTlacitek),
         ],
       ),
     );
   }
 
-  void _setView(String view) {
-    setState(() => _currentView = view);
-  }
-
-  void _clickHome() {
-    setState(() => _currentView = 'home');
-  }
+  void _setView(String view) => setState(() => _currentView = view);
+  void _clickHome() => setState(() => _currentView = 'home');
 
   Widget _buildMainContent() {
     switch (_currentView) {
@@ -254,32 +294,25 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   Widget _buildHomeView() {
+    final content = '${_taskListController.text}\n\n${_intentionsController.text}';
+
     return GestureDetector(
-      onScaleStart: (details) {
-        _baseScaleFactor = _scaleFactor;
-      },
-      onScaleUpdate: (details) {
-        setState(() {
-          _scaleFactor = (_baseScaleFactor * details.scale).clamp(0.5, 3.0);
-        });
-      },
-      onScaleEnd: (details) {
-        _baseScaleFactor = _scaleFactor;
-      },
+      onScaleStart: (details) => _baseScaleFactor = _scaleFactor,
+      onScaleUpdate: (details) => setState(() => _scaleFactor = (_baseScaleFactor * details.scale).clamp(0.5, 3.0)),
+      onScaleEnd: (details) => _baseScaleFactor = _scaleFactor,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: HtmlText(
-          '${_taskListController.text}\n\n${_intentionsController.text}',
+          content,
           scaleFactor: _scaleFactor,
         ),
       ),
     );
   }
 
+
   Widget _buildEditableView(String type) {
-    final controller = type == 'notes'
-        ? _notesController
-        : _intentionsController;
+    final controller = type == 'notes' ? _notesController : _intentionsController;
 
     return Column(
       children: [
@@ -306,21 +339,15 @@ class _MainActivityState extends State<MainActivity> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                   foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('NASTAVENÍ',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),),
+                child: const Text('NASTAVENÍ', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
               const Spacer(),
               Checkbox(
                 value: _sendMailChecked,
-                onChanged: (val) {
-                  setState(() => _sendMailChecked = val ?? false);
-                },
-                fillColor: WidgetStatePropertyAll(Colors.white),
+                onChanged: (val) => setState(() => _sendMailChecked = val ?? false),
+                fillColor: MaterialStatePropertyAll(Colors.white),
                 checkColor: Colors.black,
               ),
               const Text('ZÁLOHOVAT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -330,13 +357,9 @@ class _MainActivityState extends State<MainActivity> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                   foregroundColor: barvaTextuFunTlacitek,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('ULOŽIT',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),),
+                child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -696,24 +719,27 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   Widget _buildTextView(String viewId) {
+    final path = _latin
+        ? _latinVariant('assets/texts/$viewId.txt') // např. psalm2_lat.txt
+        : 'assets/texts/$viewId.txt';
+
     return FutureBuilder<String>(
-      future: rootBundle.loadString('assets/texts/$viewId.txt'),
+      future: rootBundle.loadString(path),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
         return SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: HtmlText(
-              snapshot.data ?? '',
-              scaleFactor: _scaleFactor,
-            ),
+          padding: const EdgeInsets.all(16.0),
+          child: HtmlText(
+            snapshot.data ?? '',
+            scaleFactor: _scaleFactor,
           ),
         );
       },
     );
   }
+
 
   @override
   void dispose() {
