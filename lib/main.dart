@@ -335,13 +335,29 @@ class _MainActivityState extends State<MainActivity> {
           child: Row(
             children: [
               ElevatedButton(
-                onPressed: () => _showMoznostiDialog(),
+                onPressed: _showMoznostiDialog,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  textStyle: const TextStyle(fontSize: 12), // zmenšené písmo
+               //   minimumSize: const Size(60, 30), // menší výška a šířka
                 ),
                 child: const Text('NASTAVENÍ', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              const Spacer(),
+              ElevatedButton(
+                onPressed: _showTemataDialog,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                  foregroundColor: barvaTextuFunTlacitek,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  textStyle: const TextStyle(fontSize: 12), // zmenšené písmo
+                 // minimumSize: const Size(60, 30), // menší výška a šířka
+                ),
+                child: const Text('TÉMATA', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
               const Spacer(),
               Checkbox(
@@ -358,6 +374,9 @@ class _MainActivityState extends State<MainActivity> {
                   backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                   foregroundColor: barvaTextuFunTlacitek,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  textStyle: const TextStyle(fontSize: 12), // zmenšené písmo
+                 // minimumSize: const Size(60, 30), // menší výška a šířka
                 ),
                 child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
@@ -368,41 +387,23 @@ class _MainActivityState extends State<MainActivity> {
     );
   }
 
-  Future<void> _showMoznostiDialog() async {
-    // 1️⃣ načtení lokálního souboru
+// --- dialog TÉMATA (7 políček + ZRUŠIT a ULOŽIT) ---
+  Future<void> _showTemataDialog() async {
     String content = await FileUtils.readFromFile(moznostiFilename);
     List<String> lines = content.split('\n');
 
-    // 2️⃣ načtení defaultní verze z assets
-    final defaultContent = await rootBundle.loadString('assets/moznosti.txt');
-    final defaultLines = defaultContent.split('\n');
-
-    // 3️⃣ připravit textové kontrolery pro 7 dní
     final controllers = List.generate(7, (i) {
       final controller = TextEditingController();
       if (i < lines.length && lines[i].trim().isNotEmpty) {
         controller.text = lines[i];
-      } else if (i < defaultLines.length) {
-        controller.text = defaultLines[i];
       } else {
         controller.text = '';
       }
       return controller;
     });
 
-    // 4️⃣ velikost textu (dropdown)
-    const validSizes = ['0.5','0.75','1.0','1.25','1.5','2.0','3.0'];
-    String selectedSize = '1.0';
-
-    if (lines.length > 7 && validSizes.contains(lines[7].trim())) {
-      selectedSize = lines[7].trim();
-    } else if (defaultLines.length > 7 && validSizes.contains(defaultLines[7].trim())) {
-      selectedSize = defaultLines[7].trim();
-    }
-
     if (!mounted) return;
 
-    // 5️⃣ zobrazit dialog
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -413,17 +414,7 @@ class _MainActivityState extends State<MainActivity> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'NASTAVENÍ',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // ❌ ZRUŠIT / ✅ ULOŽIT tlačítka
+                const Text('TÉMATA', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -432,29 +423,22 @@ class _MainActivityState extends State<MainActivity> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueGrey,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ZRUŠIT',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ZRUŠIT', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        final newLines = [
-                          ...controllers.map((c) => c.text),
-                          selectedSize,
-                        ];
-                        final newContent = newLines.join('\n');
-                        await FileUtils.writeToFile(newContent, moznostiFilename);
+                        final oldContent = await FileUtils.readFromFile(moznostiFilename);
+                        final oldLines = oldContent.split('\n');
+                        final fontSizeLine = oldLines.length > 7 ? oldLines[7] : '1.0';
+                        final newLines = [...controllers.map((c) => c.text), fontSizeLine];
+                        await FileUtils.writeToFile(newLines.join('\n'), moznostiFilename);
                         await _loadDailyMotto();
-                        await _loadFontSize();
-
-                        if (!mounted) return;
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('NASTAVENÍ ULOŽENO'),
+                            content: Text('TÉMATA ULOŽENA'),
                             backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                           ),
                         );
@@ -462,73 +446,23 @@ class _MainActivityState extends State<MainActivity> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ULOŽIT',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-
-                // 6️⃣ Dropdown pro velikost textu
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Velikost textu',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      StatefulBuilder(
-                        builder: (context, setStateDropdown) {
-                          return DropdownButton<String>(
-                            value: selectedSize,
-                            dropdownColor: Colors.grey[800],
-                            isExpanded: true,
-                            items: const [
-                              DropdownMenuItem(value: '0.5', child: Text('0.5x (Velmi malá)', style: TextStyle(color: Colors.white))),
-                              DropdownMenuItem(value: '0.75', child: Text('0.75x (Malá)', style: TextStyle(color: Colors.white))),
-                              DropdownMenuItem(value: '1.0', child: Text('1.0x (Normální)', style: TextStyle(color: Colors.white))),
-                              DropdownMenuItem(value: '1.25', child: Text('1.25x (Větší)', style: TextStyle(color: Colors.white))),
-                              DropdownMenuItem(value: '1.5', child: Text('1.5x (Velká)', style: TextStyle(color: Colors.white))),
-                              DropdownMenuItem(value: '2.0', child: Text('2.0x (Velmi velká)', style: TextStyle(color: Colors.white))),
-                              DropdownMenuItem(value: '3.0', child: Text('3.0x (Obrovská)', style: TextStyle(color: Colors.white))),
-                            ],
-                            onChanged: (value) {
-                              if (value != null) {
-                                setStateDropdown(() {
-                                  selectedSize = value;
-                                });
-                              }
-                            },
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 7️⃣ Texty pro jednotlivé dny
                 ...List.generate(7, (i) {
                   final days = ['Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota','Neděle'];
                   final currentDay = DateTime.now().weekday - 1;
                   final isToday = i == currentDay;
-
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '${days[i]}${isToday ? ' (DNES)' : ''}',
+                        Text('${days[i]}${isToday ? ' (DNES)' : ''}',
                           style: TextStyle(
                             color: isToday ? barvaFunkcnichTlacitekVyberuTextuAKurzoru : Colors.white70,
                             fontSize: 12,
@@ -543,9 +477,7 @@ class _MainActivityState extends State<MainActivity> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
                       ],
@@ -560,29 +492,22 @@ class _MainActivityState extends State<MainActivity> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueGrey,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ZRUŠIT',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ZRUŠIT', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        final newLines = [
-                          ...controllers.map((c) => c.text),
-                          selectedSize,
-                        ];
-                        final newContent = newLines.join('\n');
-                        await FileUtils.writeToFile(newContent, moznostiFilename);
+                        final oldContent = await FileUtils.readFromFile(moznostiFilename);
+                        final oldLines = oldContent.split('\n');
+                        final fontSizeLine = oldLines.length > 7 ? oldLines[7] : '1.0';
+                        final newLines = [...controllers.map((c) => c.text), fontSizeLine];
+                        await FileUtils.writeToFile(newLines.join('\n'), moznostiFilename);
                         await _loadDailyMotto();
-                        await _loadFontSize();
-
-                        if (!mounted) return;
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('NASTAVENÍ ULOŽENO'),
+                            content: Text('TÉMATA ULOŽENA'),
                             backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                           ),
                         );
@@ -590,12 +515,9 @@ class _MainActivityState extends State<MainActivity> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ULOŽIT',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -607,6 +529,104 @@ class _MainActivityState extends State<MainActivity> {
     );
   }
 
+
+// --- dialog NASTAVENÍ (jen velikost písma) ---
+  Future<void> _showMoznostiDialog() async {
+    String content = await FileUtils.readFromFile(moznostiFilename);
+    List<String> lines = content.split('\n');
+
+    // Dropdown pro velikost textu
+    const validSizes = ['0.5','0.75','1.0','1.25','1.5','2.0','3.0'];
+    String selectedSize = (lines.length > 7 && validSizes.contains(lines[7].trim()))
+        ? lines[7].trim()
+        : '1.0';
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.grey[900],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'NASTAVENÍ',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              // Dropdown pro velikost textu
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Velikost textu', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  StatefulBuilder(
+                    builder: (context, setStateDropdown) {
+                      return DropdownButton<String>(
+                        value: selectedSize,
+                        dropdownColor: Colors.grey[800],
+                        isExpanded: true,
+                        items: const [
+                          DropdownMenuItem(value: '0.5', child: Text('0.5x (Velmi malá)', style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(value: '0.75', child: Text('0.75x (Malá)', style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(value: '1.0', child: Text('1.0x (Normální)', style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(value: '1.25', child: Text('1.25x (Větší)', style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(value: '1.5', child: Text('1.5x (Velká)', style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(value: '2.0', child: Text('2.0x (Velmi velká)', style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(value: '3.0', child: Text('3.0x (Obrovská)', style: TextStyle(color: Colors.white))),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) setStateDropdown(() => selectedSize = value);
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('ZRUŠIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final newLines = [...lines.take(7), selectedSize];
+                      await FileUtils.writeToFile(newLines.join('\n'), moznostiFilename);
+                      await _loadFontSize();
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('NASTAVENÍ ULOŽENO'),
+                          backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
 
   Widget _buildHtmlToolbar(TextEditingController controller) {
