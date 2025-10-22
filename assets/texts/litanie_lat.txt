@@ -1,3 +1,4 @@
+<b>Litaniae Lauretanae</b>
 Kyrie, eleison - Christe, eleison.
 Kyrie, eleison. Christe, audi nos. - Christe, exaudi nos.
 
@@ -6,7 +7,7 @@ Fili, Redemptor mundi, Deus, - miserere nobis.
 Spiritus Sancte Deus, - miserere nobis.
 Sancta Trinitas, unus Deus, - miserere nobis.
 
-Sancta Maria,
+Sancta Maria, - ora pro nobis.
 Sancta Dei Genetrix,
 Sancta Virgo virginum,
 Mater Christi,
@@ -72,7 +73,8 @@ miserere nobis.
 Concede nos famulos tuos, quaesumus, Domine Deus, perpetua mentis et corporis sanitate gaudere: et gloriosa beatae Mariae semper Virginis intercessione, a praesenti liberari tristitia, et aeterna perfrui laetitia. Per Christum Dominum nostrum. 
 <font color="#FF0000">R./</font> Amen.
 
-<b>Memoráre</b>, o piíssima Virgo María,
+<b>Memoráre</b>
+Memoráre, o piíssima Virgo María,
 non esse audítum a sæculo,
 quemquam ad tua curréntem præsidia,
 tua implorantem auxília,
@@ -109,9 +111,9 @@ Regina caeli, laetare, alleluia,
 quia quem meruisti portare, alleluia,
 resurrexit sicut dixit, alleluia;
 ora pro nobis Deum, alleluia
-<font color="#FF0000">V./</font Gaude et laetare Virgo Maria, alleluia.
+<font color="#FF0000">V./</font> Gaude et laetare Virgo Maria, alleluia.
 <font color="#FF0000">R./</font> Quia surrexit Duminus vere, alleluia.
-<font color="#FF0000">V./</font Oremus:
+<font color="#FF0000">V./</font> Oremus:
 Deus, qui per resurrectionem Filii tui Domini nostri Jesu Christi mundum laetificare dignetus es: praesta, quaesumes; ut per ejus Genetricem Virginem Mariam perpetuae capiamus gaudiam vitae. Per eundem Christum, Dominum nostrum.
 <font color="#FF0000">R./</font> Amen.
 
