@@ -1,77 +1,126 @@
-Kyrie, elèison – Kyrie elèison
-Christe, elèison – Christe elèison
-Kyrie, elèison – Kyrie elèison
+Kyrie, eleison - Christe, eleison.
+Kyrie, eleison. Christe, audi nos. - Christe, exaudi nos.
 
-Christe, àudi nos – Christe, àudi nos 
-Christe, exàudi nos – Christe, exàudi nos
+Pater de caelis, Deus, - miserere nobis.
+Fili, Redemptor mundi, Deus, - miserere nobis.
+Spiritus Sancte Deus, - miserere nobis.
+Sancta Trinitas, unus Deus, - miserere nobis.
 
-Pàter de caelis, Deus – miserère nobis 
-Fìli Redèmptor mundi, Deus – miserère nobis 
-Spìritus Sàncte, Deus – miserère nobis 
-Sancta Trìnitas, ùnus Deus – miserère nobis
+Sancta Maria,
+Sancta Dei Genetrix,
+Sancta Virgo virginum,
+Mater Christi,
+Mater Ecclesiae,
+Mater Divinae gratiae,
+Mater purissima,
+Mater castissima,
+Mater inviolata,
+Mater intemerata,
+Mater amabilis,
+Mater admirabilis,
+Mater boni Consilii,
+Mater Creatoris,
+Mater Salvatoris,
+Virgo prudentissima,
+Virgo veneranda,
+Virgo praedicanda,
+Virgo potens,
+Virgo clemens,
+Virgo fidelis,
+Speculum iustitiae,
+Sedes sapientiae,
+Causa nostrae laetitiae,
+Vas spirituale,
+Vas honorabile,
+Vas insigne devotionis,
+Rosa mystica,
+Turris Davidica,
+Turris eburnea,
+Domus aurea,
+Foederis arca,
+Ianua caeli,
+Stella matutina,
+Salus infirmorum,
+Refugium peccatorum,
+Consolatrix afflictorum,
+Auxilium Christianorum,
+Regina Angelorum,
+Regina Patriarcharum,
+Regina Prophetarum,
+Regina Apostolorum,
+Regina Martyrum,
+Regina Confessorum,
+Regina Virginum,
+Regina Sanctorum omnium,
+Regina sine labe originali concepta,
+Regina in caelum assumpta,
+Regina Sanctissimi Rosarii,
+Regina familiae,
+Regina pacis,
 
+Agnus Dei, qui tollis peccata mundi, 
+parce nobis, Domine.
+Agnus Dei, qui tollis peccata mundi, 
+exaudi nobis, Domine.
+Agnus Dei, qui tollis peccata mundi, 
+miserere nobis.
 
-Sancta MarìaSancta
-Dèi GènetrixSancta
-Vìrgo vìrginum
-Mater Ecclesiae
-Mater divìnae gratiae
-Mater purissima
-Mater castissima
-Mater inviolata
-Mater intemerata
-Mater amabilis
-Mater admirabilis
-Mater boni consìlii
-Mater Creatòris
-Mater Salvatòris
-Virgo prudentissima
-Virgo veneranda
-Virgo praedicanda
-Virgo pòtens
-Virgo clèmens
-Virgo fidèlis
-Spèculum iustìtiae
-Sèdes sapiéntiae
-Causa nòstrae laetìtiae
-Vas spirituale
-Vas honorabile
-Vas insìgne devotiònis
-Rosa mystica
-Turris davìdica
-Turris ebùrnea
-Domus àurea
-Foèderis arca
-Iànua caeli
-Stella matutina
-Sàlus informòrum
-Refùgium peccatòrum
-Consolatrix afflictòrum
-Auxìlium christianòrum
-Regina angelòrum
-Regina patriarchàrum
-Regina prophetàrum
-Regina apostolòrum
-Regina màrtyrum
-Regina confessòrum
-Regina vìrginum
-Regina sanctòrum òmnium
-Regina sine labe originali concepta
-Regina in caelum assùmpta
-Regina sacratìssimi Rosarii
-Regina familiae
-Regina pacis
-
-Àgnus Dei, qui tòllis peccàta mùndi 
-pàrce nobis,
-Àgnus Dei, qui tòllis peccàta mùndi
-exàudi nos,
-Àgnus Dei, qui tòllis peccàta mùndi
-miserère nobis.
-
-<font color="#FF0000">V./</font> Ora pro nobis, Sancta Dei Genetrix,
+<font color="#FF0000">V./</font> Ora pro nobis, Sancta Dei Genetrix, 
 <font color="#FF0000">R./</font> Ut digni efficiamur promissionibus Christi.
 
 <font color="#FF0000">V./</font><b>Oremus</b>
-Concede nos famulos tuos, quaesumus, Domine Deus, perpetua mentis et corporis sanitate gaudere: et gloriosa beatae Mariae semper Virginis intercessione, a praesenti liberari tristitia, et aeterna perfrui laetitia. Per Christum Dominum nostrum.
+Concede nos famulos tuos, quaesumus, Domine Deus, perpetua mentis et corporis sanitate gaudere: et gloriosa beatae Mariae semper Virginis intercessione, a praesenti liberari tristitia, et aeterna perfrui laetitia. Per Christum Dominum nostrum. 
 <font color="#FF0000">R./</font> Amen.
+
+<b>Memoráre</b>, o piíssima Virgo María,
+non esse audítum a sæculo,
+quemquam ad tua curréntem præsidia,
+tua implorantem auxília,
+tua peténtem suffrágia,
+esse derelíctum.
+
+Ego tali animátus confidéntia,
+ad te, Virgo Vírginum, Mater, curro,
+ad te vénio, coram te gemens peccátor assisto.
+ 
+Noli, Mater Verbi,
+verba mea despícere;
+sed áudi propítia et exáudi.
+Amen.
+
+<b>Angelus Domini</b>
+<font color="#FF0000">V./</font> Angelus Domini nuntiavit Mariae.
+<font color="#FF0000">R./</font> Et concepit de Spiritu Sancto.
+Ave Maria.
+<font color="#FF0000">V./</font> Ecce ancilla Domini,
+<font color="#FF0000">R./</font> Fiat mihi secundum verbum tuum.
+Ave Maria.
+<font color="#FF0000">V./</font> Et Verbum caro factum est,
+<font color="#FF0000">R./</font> Et habitavit in nobis.
+Ave Maria.
+<font color="#FF0000">V./</font> Ora pro nobis, sancta Dei Genetrix,
+<font color="#FF0000">R./</font> Ut digni efficiamur promissionibus Christi.
+
+Oremus. Gratiam tuam, quaesumus, Domine, mentibus nostris infunde; ut qui, Angelo nuntiante, Christi Filii tui incarnationem cognovimus, per passionem eius et crucem ad resurrectionis gloriam perducamur. Per eumdem Christum Dominum nostrum. 
+Amen.
+
+<b>Regina caeli, laetare</b>
+Regina caeli, laetare, alleluia,
+quia quem meruisti portare, alleluia,
+resurrexit sicut dixit, alleluia;
+ora pro nobis Deum, alleluia
+<font color="#FF0000">V./</font Gaude et laetare Virgo Maria, alleluia.
+<font color="#FF0000">R./</font> Quia surrexit Duminus vere, alleluia.
+<font color="#FF0000">V./</font Oremus:
+Deus, qui per resurrectionem Filii tui Domini nostri Jesu Christi mundum laetificare dignetus es: praesta, quaesumes; ut per ejus Genetricem Virginem Mariam perpetuae capiamus gaudiam vitae. Per eundem Christum, Dominum nostrum.
+<font color="#FF0000">R./</font> Amen.
+
+<b>Salve Regina</b>
+Salve Regina, Mater misericordiae, vita, dulcedo et spes nostra salve.
+Ad te clamamus, exsules filii Evae. Ad te suspiramus, gementes et flentes in hac lacrimarum valle.
+Eia ergo, advocata nostra, illos tuos misericordes oculos ad nos converte.
+Et Jesum, benedictum fructum ventris tui,
+nobis post hoc exsilium ostende. O clemens, o pia, o dulcis Virgo Maria.
+
+<b>Sub tuum praesidium</b>
+Sub tuum praesidium confugimus, sancta Dei Genitrix; nostras deprecationes ne despicias in necessitatibus, sed a periculis cunctis libera nos semper, Virgo gloriosa et benedicta.
