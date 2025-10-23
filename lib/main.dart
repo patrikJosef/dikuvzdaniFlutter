@@ -134,7 +134,7 @@ class _MainActivityState extends State<MainActivity> {
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
       const calendarId = 'k9grn9pcub347543afce5uiv50@group.calendar.google.com';
-      const apiKey = 'AIzaSyAfvufRSQUCvBS8wpIOkibNq9m-CvfQa0M';
+      const apiKey = '';
 
       final url =
           'https://www.googleapis.com/calendar/v3/calendars/$calendarId/events'
