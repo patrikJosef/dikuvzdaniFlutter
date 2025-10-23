@@ -9,6 +9,8 @@ import 'package:flutter/gestures.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:share_plus/share_plus.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const MyApp());
@@ -16,8 +18,10 @@ void main() {
 
 const linkColor = Colors.lightBlueAccent;
 const barvaFunkcnichTlacitekVyberuTextuAKurzoru = Colors.amber;
-const barvaFunkcnichTlacitekVyberuTextuAKurzoruPrusvitnost = Color.fromRGBO(255, 193, 7, 0.3);
-const translucentBlue = Color.fromRGBO(3, 169, 244, 0.3); // RGB pro lightBlueAccent
+const barvaFunkcnichTlacitekVyberuTextuAKurzoruPrusvitnost =
+    Color.fromRGBO(255, 193, 7, 0.3);
+const translucentBlue =
+    Color.fromRGBO(3, 169, 244, 0.3); // RGB pro lightBlueAccent
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -34,13 +38,16 @@ class MyApp extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
-            borderSide: BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru),
+            borderSide:
+                BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru, width: 2),
+            borderSide: BorderSide(
+                color: barvaFunkcnichTlacitekVyberuTextuAKurzoru, width: 2),
           ),
           enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru),
+            borderSide:
+                BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru),
           ),
         ),
         primarySwatch: Colors.blue,
@@ -89,6 +96,7 @@ class _MainActivityState extends State<MainActivity> {
     _loadFiles();
     _loadDailyMotto();
     _loadFontSize();
+    _loadTodayEvents();
   }
 
   String _latinVariant(String path) {
@@ -117,6 +125,50 @@ class _MainActivityState extends State<MainActivity> {
     });
   }
 
+  List<Map<String, dynamic>> _todayEvents = [];
+
+  Future<void> _loadTodayEvents() async {
+    try {
+      final now = DateTime.now().toUtc();
+      final startOfDay = DateTime.utc(now.year, now.month, now.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      const calendarId = 'k9grn9pcub347543afce5uiv50@group.calendar.google.com';
+      const apiKey = 'AIzaSyAfvufRSQUCvBS8wpIOkibNq9m-CvfQa0M';
+
+      final url =
+          'https://www.googleapis.com/calendar/v3/calendars/$calendarId/events'
+          '?key=$apiKey'
+          '&timeMin=${startOfDay.toIso8601String()}Z'
+          '&timeMax=${endOfDay.toIso8601String()}Z'
+          '&singleEvents=true'
+          '&orderBy=startTime';
+
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final events = data['items'] as List<dynamic>;
+
+        setState(() {
+          _todayEvents = events.take(4).map((event) {
+            final summary = event['summary'] ?? '(bez názvu)';
+            final start = event['start']['dateTime'] ?? event['start']['date'];
+            final time =
+                start != null ? start.toString().substring(11, 16) : '';
+            return {
+              'time': time,
+              'summary': summary,
+            };
+          }).toList();
+        });
+      } else {
+        print('Chyba načítání kalendáře: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Chyba: $e');
+    }
+  }
+
   Future<void> _loadFontSize() async {
     try {
       final content = await FileUtils.readFromFile(moznostiFilename);
@@ -137,7 +189,8 @@ class _MainActivityState extends State<MainActivity> {
   Future<void> _loadDailyMotto() async {
     try {
       final content = await FileUtils.readFromFile(moznostiFilename);
-      final lines = content.split('\n').where((line) => line.trim().isNotEmpty).toList();
+      final lines =
+          content.split('\n').where((line) => line.trim().isNotEmpty).toList();
       final dayOfWeek = DateTime.now().weekday;
 
       if (lines.isNotEmpty) {
@@ -189,7 +242,9 @@ class _MainActivityState extends State<MainActivity> {
           title: RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
-              text: _dailyMotto.isNotEmpty ? _dailyMotto : 'Cor Mariae dulcissimum, iter para tutum',
+              text: _dailyMotto.isNotEmpty
+                  ? _dailyMotto
+                  : 'Cor Mariae dulcissimum, iter para tutum',
               style: const TextStyle(fontSize: 15, fontStyle: FontStyle.italic),
             ),
           ),
@@ -199,10 +254,40 @@ class _MainActivityState extends State<MainActivity> {
       body: Column(
         children: [
           _buildButtonBar(),
+          if (_todayEvents.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _todayEvents.map((event) {
+                    return Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey[800],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${event['time']}  ${event['summary']}',
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
           // Přepínač jazyků
           // Přepínač jazyků (jen pro statické texty)
-          if (_currentView != 'home' && _currentView !='beforeMass'
-              && _currentView !='afterMass' && _currentView != 'onMass' && _currentView != 'notes' && _currentView != 'intentions')
+          if (_currentView != 'home' &&
+              _currentView != 'beforeMass' &&
+              _currentView != 'afterMass' &&
+              _currentView != 'onMass' &&
+              _currentView != 'notes' &&
+              _currentView != 'intentions')
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
               child: Row(
@@ -211,9 +296,11 @@ class _MainActivityState extends State<MainActivity> {
                     child: ElevatedButton(
                       onPressed: () => _switchLanguage(false),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _latin ? Colors.blueGrey : translucentBlue,
+                        backgroundColor:
+                            _latin ? Colors.blueGrey : Colors.black,
                         foregroundColor: _latin ? Colors.white : Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('ČESKY'),
                     ),
@@ -223,9 +310,11 @@ class _MainActivityState extends State<MainActivity> {
                     child: ElevatedButton(
                       onPressed: () => _switchLanguage(true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: !_latin ? Colors.blueGrey: translucentBlue,
+                        backgroundColor:
+                            !_latin ? Colors.blueGrey : Colors.black,
                         foregroundColor: !_latin ? Colors.white : Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('LATINSKY'),
                     ),
@@ -251,17 +340,27 @@ class _MainActivityState extends State<MainActivity> {
         childAspectRatio: 2.67,
         children: [
           _NavButton('Úmysly', _clickHome, barvaTextuNavTlacitek),
-          _NavButton('Modlitby', () => _setView('prayers'), barvaTextuNavTlacitek),
-          _NavButton('2. Žalm', () => _setView('psalm2'), barvaTextuNavTlacitek),
-          _NavButton('Adoro te', () => _setView('adoro'), barvaTextuNavTlacitek),
+          _NavButton(
+              'Modlitby', () => _setView('prayers'), barvaTextuNavTlacitek),
+          _NavButton(
+              '2. Žalm', () => _setView('psalm2'), barvaTextuNavTlacitek),
+          _NavButton(
+              'Adoro te', () => _setView('adoro'), barvaTextuNavTlacitek),
           _NavButton('Trium', () => _setView('trium'), barvaTextuNavTlacitek),
-          _NavButton('Quicumque', () => _setView('quicumque'), barvaTextuNavTlacitek),
-          _NavButton('Litanie', () => _setView('litanie'), barvaTextuNavTlacitek),
-          _NavButton('Přede mší', () => _setView('beforeMass'), barvaTextuNavTlacitek),
-          _NavButton('Po mši', () => _setView('afterMass'), barvaTextuNavTlacitek),
-          _NavButton('Při mši', () => _setView('onMass'), barvaTextuNavTlacitek),
-          _NavButton('Poznámky', () => _setView('notes'), barvaTextuFunTlacitek),
-          _NavButton('Úmysly', () => _setView('intentions'), barvaTextuFunTlacitek),
+          _NavButton(
+              'Quicumque', () => _setView('quicumque'), barvaTextuNavTlacitek),
+          _NavButton(
+              'Litanie', () => _setView('litanie'), barvaTextuNavTlacitek),
+          _NavButton(
+              'Přede mší', () => _setView('beforeMass'), barvaTextuNavTlacitek),
+          _NavButton(
+              'Po mši', () => _setView('afterMass'), barvaTextuNavTlacitek),
+          _NavButton(
+              'Při mši', () => _setView('onMass'), barvaTextuNavTlacitek),
+          _NavButton(
+              'Poznámky', () => _setView('notes'), barvaTextuFunTlacitek),
+          _NavButton(
+              'Úmysly', () => _setView('intentions'), barvaTextuFunTlacitek),
         ],
       ),
     );
@@ -294,11 +393,13 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   Widget _buildHomeView() {
-    final content = '${_taskListController.text}\n\n${_intentionsController.text}';
+    final content =
+        '${_taskListController.text}\n\n${_intentionsController.text}';
 
     return GestureDetector(
       onScaleStart: (details) => _baseScaleFactor = _scaleFactor,
-      onScaleUpdate: (details) => setState(() => _scaleFactor = (_baseScaleFactor * details.scale).clamp(0.5, 3.0)),
+      onScaleUpdate: (details) => setState(() =>
+          _scaleFactor = (_baseScaleFactor * details.scale).clamp(0.5, 3.0)),
       onScaleEnd: (details) => _baseScaleFactor = _scaleFactor,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -310,9 +411,9 @@ class _MainActivityState extends State<MainActivity> {
     );
   }
 
-
   Widget _buildEditableView(String type) {
-    final controller = type == 'notes' ? _notesController : _intentionsController;
+    final controller =
+        type == 'notes' ? _notesController : _intentionsController;
 
     return Column(
       children: [
@@ -339,12 +440,15 @@ class _MainActivityState extends State<MainActivity> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                   foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   textStyle: const TextStyle(fontSize: 12), // zmenšené písmo
-               //   minimumSize: const Size(60, 30), // menší výška a šířka
+                  //   minimumSize: const Size(60, 30), // menší výška a šířka
                 ),
-                child: const Text('NASTAVENÍ', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('NASTAVENÍ',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
               const Spacer(),
               ElevatedButton(
@@ -352,33 +456,42 @@ class _MainActivityState extends State<MainActivity> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                   foregroundColor: barvaTextuFunTlacitek,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   textStyle: const TextStyle(fontSize: 12), // zmenšené písmo
-                 // minimumSize: const Size(60, 30), // menší výška a šířka
+                  // minimumSize: const Size(60, 30), // menší výška a šířka
                 ),
-                child: const Text('TÉMATA', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('TÉMATA',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
               const Spacer(),
               Checkbox(
                 value: _sendMailChecked,
-                onChanged: (val) => setState(() => _sendMailChecked = val ?? false),
+                onChanged: (val) =>
+                    setState(() => _sendMailChecked = val ?? false),
                 fillColor: MaterialStatePropertyAll(Colors.white),
                 checkColor: Colors.black,
               ),
-              const Text('ZÁLOHOVAT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              const Text('ZÁLOHOVAT',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
               const Spacer(),
               ElevatedButton(
                 onPressed: _saveFiles,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                   foregroundColor: barvaTextuFunTlacitek,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   textStyle: const TextStyle(fontSize: 12), // zmenšené písmo
-                 // minimumSize: const Size(60, 30), // menší výška a šířka
+                  // minimumSize: const Size(60, 30), // menší výška a šířka
                 ),
-                child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('ULOŽIT',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -414,7 +527,11 @@ class _MainActivityState extends State<MainActivity> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('TÉMATA', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('TÉMATA',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -423,38 +540,58 @@ class _MainActivityState extends State<MainActivity> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueGrey,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ZRUŠIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ZRUŠIT',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        final oldContent = await FileUtils.readFromFile(moznostiFilename);
+                        final oldContent =
+                            await FileUtils.readFromFile(moznostiFilename);
                         final oldLines = oldContent.split('\n');
-                        final fontSizeLine = oldLines.length > 7 ? oldLines[7] : '1.0';
-                        final newLines = [...controllers.map((c) => c.text), fontSizeLine];
-                        await FileUtils.writeToFile(newLines.join('\n'), moznostiFilename);
+                        final fontSizeLine =
+                            oldLines.length > 7 ? oldLines[7] : '1.0';
+                        final newLines = [
+                          ...controllers.map((c) => c.text),
+                          fontSizeLine
+                        ];
+                        await FileUtils.writeToFile(
+                            newLines.join('\n'), moznostiFilename);
                         await _loadDailyMotto();
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('TÉMATA ULOŽENA'),
-                            backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                            backgroundColor:
+                                barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                        backgroundColor:
+                            barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ULOŽIT',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 ...List.generate(7, (i) {
-                  final days = ['Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota','Neděle'];
+                  final days = [
+                    'Pondělí',
+                    'Úterý',
+                    'Středa',
+                    'Čtvrtek',
+                    'Pátek',
+                    'Sobota',
+                    'Neděle'
+                  ];
                   final currentDay = DateTime.now().weekday - 1;
                   final isToday = i == currentDay;
                   return Padding(
@@ -462,11 +599,15 @@ class _MainActivityState extends State<MainActivity> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('${days[i]}${isToday ? ' (DNES)' : ''}',
+                        Text(
+                          '${days[i]}${isToday ? ' (DNES)' : ''}',
                           style: TextStyle(
-                            color: isToday ? barvaFunkcnichTlacitekVyberuTextuAKurzoru : Colors.white70,
+                            color: isToday
+                                ? barvaFunkcnichTlacitekVyberuTextuAKurzoru
+                                : Colors.white70,
                             fontSize: 12,
-                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                            fontWeight:
+                                isToday ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -477,7 +618,8 @@ class _MainActivityState extends State<MainActivity> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.white,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
                       ],
@@ -492,32 +634,44 @@ class _MainActivityState extends State<MainActivity> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueGrey,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ZRUŠIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ZRUŠIT',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        final oldContent = await FileUtils.readFromFile(moznostiFilename);
+                        final oldContent =
+                            await FileUtils.readFromFile(moznostiFilename);
                         final oldLines = oldContent.split('\n');
-                        final fontSizeLine = oldLines.length > 7 ? oldLines[7] : '1.0';
-                        final newLines = [...controllers.map((c) => c.text), fontSizeLine];
-                        await FileUtils.writeToFile(newLines.join('\n'), moznostiFilename);
+                        final fontSizeLine =
+                            oldLines.length > 7 ? oldLines[7] : '1.0';
+                        final newLines = [
+                          ...controllers.map((c) => c.text),
+                          fontSizeLine
+                        ];
+                        await FileUtils.writeToFile(
+                            newLines.join('\n'), moznostiFilename);
                         await _loadDailyMotto();
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('TÉMATA ULOŽENA'),
-                            backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                            backgroundColor:
+                                barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                        backgroundColor:
+                            barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ULOŽIT',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -529,17 +683,17 @@ class _MainActivityState extends State<MainActivity> {
     );
   }
 
-
 // --- dialog NASTAVENÍ (jen velikost písma) ---
   Future<void> _showMoznostiDialog() async {
     String content = await FileUtils.readFromFile(moznostiFilename);
     List<String> lines = content.split('\n');
 
     // Dropdown pro velikost textu
-    const validSizes = ['0.5','0.75','1.0','1.25','1.5','2.0','3.0'];
-    String selectedSize = (lines.length > 7 && validSizes.contains(lines[7].trim()))
-        ? lines[7].trim()
-        : '1.0';
+    const validSizes = ['0.5', '0.75', '1.0', '1.25', '1.5', '2.0', '3.0'];
+    String selectedSize =
+        (lines.length > 7 && validSizes.contains(lines[7].trim()))
+            ? lines[7].trim()
+            : '1.0';
 
     if (!mounted) return;
 
@@ -554,14 +708,18 @@ class _MainActivityState extends State<MainActivity> {
             children: [
               const Text(
                 'NASTAVENÍ',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               // Dropdown pro velikost textu
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Velikost textu', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const Text('Velikost textu',
+                      style: TextStyle(color: Colors.white70, fontSize: 12)),
                   const SizedBox(height: 4),
                   StatefulBuilder(
                     builder: (context, setStateDropdown) {
@@ -570,16 +728,38 @@ class _MainActivityState extends State<MainActivity> {
                         dropdownColor: Colors.grey[800],
                         isExpanded: true,
                         items: const [
-                          DropdownMenuItem(value: '0.5', child: Text('0.5x (Velmi malá)', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: '0.75', child: Text('0.75x (Malá)', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: '1.0', child: Text('1.0x (Normální)', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: '1.25', child: Text('1.25x (Větší)', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: '1.5', child: Text('1.5x (Velká)', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: '2.0', child: Text('2.0x (Velmi velká)', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: '3.0', child: Text('3.0x (Obrovská)', style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: '0.5',
+                              child: Text('0.5x (Velmi malá)',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: '0.75',
+                              child: Text('0.75x (Malá)',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: '1.0',
+                              child: Text('1.0x (Normální)',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: '1.25',
+                              child: Text('1.25x (Větší)',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: '1.5',
+                              child: Text('1.5x (Velká)',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: '2.0',
+                              child: Text('2.0x (Velmi velká)',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: '3.0',
+                              child: Text('3.0x (Obrovská)',
+                                  style: TextStyle(color: Colors.white))),
                         ],
                         onChanged: (value) {
-                          if (value != null) setStateDropdown(() => selectedSize = value);
+                          if (value != null)
+                            setStateDropdown(() => selectedSize = value);
                         },
                       );
                     },
@@ -595,29 +775,36 @@ class _MainActivityState extends State<MainActivity> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blueGrey,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('ZRUŠIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('ZRUŠIT',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                   ElevatedButton(
                     onPressed: () async {
                       final newLines = [...lines.take(7), selectedSize];
-                      await FileUtils.writeToFile(newLines.join('\n'), moznostiFilename);
+                      await FileUtils.writeToFile(
+                          newLines.join('\n'), moznostiFilename);
                       await _loadFontSize();
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('NASTAVENÍ ULOŽENO'),
-                          backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                          backgroundColor:
+                              barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                         ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                      backgroundColor:
+                          barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                       foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('ULOŽIT',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -627,7 +814,6 @@ class _MainActivityState extends State<MainActivity> {
       ),
     );
   }
-
 
   Widget _buildHtmlToolbar(TextEditingController controller) {
     return Container(
@@ -640,7 +826,8 @@ class _MainActivityState extends State<MainActivity> {
           _htmlButton('🔗', () => _insertLink(controller)),
           _colorPicker(controller),
           const Spacer(),
-          const Text('HTML', style: TextStyle(color: Colors.white70, fontSize: 12)),
+          const Text('HTML',
+              style: TextStyle(color: Colors.white70, fontSize: 12)),
         ],
       ),
     );
@@ -670,7 +857,8 @@ class _MainActivityState extends State<MainActivity> {
 
     return DropdownButton<String>(
       dropdownColor: Colors.grey[900],
-      hint: const Text('Barva', style: TextStyle(color: Colors.white, fontSize: 12)),
+      hint: const Text('Barva',
+          style: TextStyle(color: Colors.white, fontSize: 12)),
       items: colorMap.entries.map((entry) {
         final value = entry.key;
         final label = entry.value;
@@ -684,7 +872,8 @@ class _MainActivityState extends State<MainActivity> {
       }).toList(),
       onChanged: (String? selectedColor) {
         if (selectedColor != null) {
-          _wrapSelectionWith(controller, '<font color="$selectedColor">', '</font>');
+          _wrapSelectionWith(
+              controller, '<font color="$selectedColor">', '</font>');
         }
       },
     );
@@ -709,7 +898,8 @@ class _MainActivityState extends State<MainActivity> {
     }
   }
 
-  void _wrapSelectionWith(TextEditingController controller, String startTag, String endTag) {
+  void _wrapSelectionWith(
+      TextEditingController controller, String startTag, String endTag) {
     final text = controller.text;
     final selection = controller.selection;
 
@@ -722,11 +912,11 @@ class _MainActivityState extends State<MainActivity> {
     final newText = '$before$startTag$selectedText$endTag$after';
 
     controller.text = newText;
-    controller.selection = TextSelection.collapsed(offset: (before + startTag + selectedText + endTag).length);
+    controller.selection = TextSelection.collapsed(
+        offset: (before + startTag + selectedText + endTag).length);
   }
 
   void _insertLink(TextEditingController controller) {
-    final selection = controller.selection;
     final selectedText = controller.selection.textInside(controller.text);
     final url = 'https://example.com';
 
@@ -735,7 +925,8 @@ class _MainActivityState extends State<MainActivity> {
     final after = controller.selection.textAfter(controller.text);
 
     controller.text = '$before$link$after';
-    controller.selection = TextSelection.collapsed(offset: (before + link).length);
+    controller.selection =
+        TextSelection.collapsed(offset: (before + link).length);
   }
 
   Widget _buildTextView(String viewId) {
@@ -759,7 +950,6 @@ class _MainActivityState extends State<MainActivity> {
       },
     );
   }
-
 
   @override
   void dispose() {
@@ -870,8 +1060,7 @@ class HtmlText extends StatelessWidget {
             fontSize: 19 * scaleFactor,
             decoration: TextDecoration.underline,
           ),
-          recognizer: TapGestureRecognizer()
-            ..onTap = () => _launchUrl(href),
+          recognizer: TapGestureRecognizer()..onTap = () => _launchUrl(href),
         );
 
       case 'b':
@@ -986,7 +1175,6 @@ const String taskListFilename = 'tasklist.txt';
 const String notesFilename = 'notes.txt';
 const String intentionsFilename = 'intentions.txt';
 const String moznostiFilename = 'moznosti.txt';
-
 
 class FileUtils {
   static Future<String> readFromFile(String fileName) async {

@@ -24,6 +24,7 @@ dependencies:
   flutter_html: ^3.0.0
   gesture_x_detector: ^1.1.1
   cupertino_icons: ^1.0.8
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:
