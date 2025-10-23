@@ -631,7 +631,13 @@ class _MainActivityState extends State<MainActivity> {
                         final fontSizeLine =
                             oldLines.length > 7 ? oldLines[7] : '1.0';
                         final newLines = [
-                          ...controllers.map((c) => c.text),
+                          ...controllers.map((c) {
+                            String clean =
+                                c.text.replaceAll(RegExp(r'[\n\r\t]'), '');
+                            if (clean.length > 200)
+                              clean = clean.substring(0, 200);
+                            return clean;
+                          }),
                           fontSizeLine
                         ];
                         await FileUtils.writeToFile(
@@ -914,7 +920,7 @@ class _MainActivityState extends State<MainActivity> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('NASTAVENÍ ULOŽENO'),
-                              backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                              backgroundColor: Colors.amber,
                             ),
                           );
                         },
