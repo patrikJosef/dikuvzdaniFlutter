@@ -11,23 +11,32 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 const linkColor = Colors.lightBlueAccent;
-const barvaFunkcnichTlacitekVyberuTextuAKurzoru = Colors.amber;
+const translucentBlue =
+Color.fromRGBO(3, 169, 244, 0.3); // RGB pro lightBlueAccent
+const barvaFunkcnichTlacitekVyberuTextuAKurzoru = translucentBlue;
 const barvaFunkcnichTlacitekVyberuTextuAKurzoruPrusvitnost =
     Color.fromRGBO(255, 193, 7, 0.3);
-const translucentBlue =
-    Color.fromRGBO(3, 169, 244, 0.3); // RGB pro lightBlueAccent
+
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Nastavit barvu status baru
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.black, // barva pod notchem / status barem
+        statusBarIconBrightness: Brightness.light, // ikony bílé
+      ),
+    );
     return MaterialApp(
       title: 'Díkůvzdání',
       theme: ThemeData(
@@ -214,6 +223,9 @@ class _MainActivityState extends State<MainActivity> {
           _baseScaleFactor = _scaleFactor;
         });
       }
+      if (lines.length > 10) {
+        _latin = lines[10].trim().toLowerCase() == 'true';
+      }
     } catch (e) {
       // Default value
     }
@@ -248,7 +260,7 @@ class _MainActivityState extends State<MainActivity> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('POZNÁMKY I ÚMYSLY ULOŽENY'),
-        backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+        backgroundColor: Colors.amber,
         duration: Duration(seconds: 2),
       ),
     );
@@ -266,7 +278,6 @@ class _MainActivityState extends State<MainActivity> {
     }
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -402,7 +413,10 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   void _setView(String view) => setState(() => _currentView = view);
-  void _clickHome() => setState(() => _currentView = 'home');
+  void _clickHome() {
+    setState(() => _currentView = 'home');
+    _loadTodayEvents();
+  }
 
   Widget _buildMainContent() {
     switch (_currentView) {
@@ -469,67 +483,95 @@ class _MainActivityState extends State<MainActivity> {
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ElevatedButton(
-                onPressed: _showMoznostiDialog,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  textStyle: const TextStyle(fontSize: 12), // zmenšené písmo
-                  //   minimumSize: const Size(60, 30), // menší výška a šířka
+              // 🔹 NASTAVENÍ
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _showMoznostiDialog,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                    foregroundColor: barvaTextuNavTlacitek,
+                    padding: const EdgeInsets.symmetric(vertical: 6), // menší výška
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('NASTAVENÍ'),
                 ),
-                child: const Text('NASTAVENÍ',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: _showTemataDialog,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                  foregroundColor: barvaTextuFunTlacitek,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  textStyle: const TextStyle(fontSize: 12), // zmenšené písmo
-                  // minimumSize: const Size(60, 30), // menší výška a šířka
+
+              const SizedBox(width: 6), // 🔹 menší mezera
+
+              // 🔹 TÉMATA
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _showTemataDialog,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                    foregroundColor: barvaTextuNavTlacitek,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('TÉMATA'),
                 ),
-                child: const Text('TÉMATA',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
-              const Spacer(),
-              Checkbox(
-                value: _sendMailChecked,
-                onChanged: (val) =>
-                    setState(() => _sendMailChecked = val ?? false),
-                fillColor: MaterialStatePropertyAll(Colors.white),
-                checkColor: Colors.black,
+
+              const SizedBox(width: 6),
+
+              // 🔹 Checkbox + Text zarovnaný na střed
+              Row(
+                children: [
+                  Checkbox(
+                    value: _sendMailChecked,
+                    onChanged: (val) =>
+                        setState(() => _sendMailChecked = val ?? false),
+                    fillColor: const MaterialStatePropertyAll(Colors.white),
+                    checkColor: Colors.black,
+                    visualDensity: VisualDensity.compact, // 🔹 zmenšený checkbox
+                  ),
+                  const Text(
+                    'ZÁLOHOVAT',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
-              const Text('ZÁLOHOVAT',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: _saveFiles,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                  foregroundColor: barvaTextuFunTlacitek,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  textStyle: const TextStyle(fontSize: 12), // zmenšené písmo
-                  // minimumSize: const Size(60, 30), // menší výška a šířka
+
+              const SizedBox(width: 6),
+
+              // 🔹 ULOŽIT
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _saveFiles,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                    foregroundColor: barvaTextuNavTlacitek,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('ULOŽIT'),
                 ),
-                child: const Text('ULOŽIT',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
-          ),
+          )
+
         ),
       ],
     );
@@ -600,14 +642,14 @@ class _MainActivityState extends State<MainActivity> {
                           const SnackBar(
                             content: Text('TÉMATA ULOŽENA'),
                             backgroundColor:
-                                barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                                Colors.amber,
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
                             barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                        foregroundColor: Colors.black,
+                        foregroundColor: barvaTextuNavTlacitek,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
@@ -694,14 +736,14 @@ class _MainActivityState extends State<MainActivity> {
                           const SnackBar(
                             content: Text('TÉMATA ULOŽENA'),
                             backgroundColor:
-                                barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                                Colors.amber,
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
                             barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                        foregroundColor: Colors.black,
+                        foregroundColor: barvaTextuNavTlacitek,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
@@ -723,192 +765,177 @@ class _MainActivityState extends State<MainActivity> {
     String content = await FileUtils.readFromFile(moznostiFilename);
     List<String> lines = content.split('\n');
 
-    // Doplníme chybějící řádky, aby mělo alespoň 10 řádků
-    while (lines.length < 10) {
-      lines.add('');
-    }
+    // zajistit, aby bylo alespoň 11 řádků
+    while (lines.length < 11) lines.add('');
 
-    // Načtení aktuálních hodnot
-    const validSizes = ['0.5', '0.75', '1.0', '1.25', '1.5', '2.0', '3.0'];
-    String selectedSize =
-    validSizes.contains(lines[7].trim()) ? lines[7].trim() : '1.0';
-    final apiKeyController = TextEditingController(text: lines[8].trim());
-    final calendarIdController = TextEditingController(text: lines[9].trim());
+    // Předvyplněné hodnoty
+    String selectedSize = (lines.length > 7 && lines[7].trim().isNotEmpty) ? lines[7].trim() : '1.0';
+    String calendarId = (lines.length > 8) ? lines[8].trim() : '';
+    String apiKey = (lines.length > 9) ? lines[9].trim() : '';
+    bool latinFlag = (lines.length > 10) ? lines[10].trim().toLowerCase() == 'true' : false;
 
     if (!mounted) return;
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.grey[900],
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'NASTAVENÍ',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
+      builder: (context) {
+        String tempSize = selectedSize;
+        String tempCalendarId = calendarId;
+        String tempApiKey = apiKey;
+        bool tempLatin = latinFlag;
 
-                // --- Dropdown pro velikost textu ---
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Velikost textu',
-                        style: TextStyle(color: Colors.white70, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    StatefulBuilder(
-                      builder: (context, setStateDropdown) {
-                        return DropdownButton<String>(
-                          value: selectedSize,
-                          dropdownColor: Colors.grey[800],
-                          isExpanded: true,
-                          items: const [
-                            DropdownMenuItem(
-                                value: '0.5',
-                                child: Text('0.5x (Velmi malá)',
-                                    style: TextStyle(color: Colors.white))),
-                            DropdownMenuItem(
-                                value: '0.75',
-                                child: Text('0.75x (Malá)',
-                                    style: TextStyle(color: Colors.white))),
-                            DropdownMenuItem(
-                                value: '1.0',
-                                child: Text('1.0x (Normální)',
-                                    style: TextStyle(color: Colors.white))),
-                            DropdownMenuItem(
-                                value: '1.25',
-                                child: Text('1.25x (Větší)',
-                                    style: TextStyle(color: Colors.white))),
-                            DropdownMenuItem(
-                                value: '1.5',
-                                child: Text('1.5x (Velká)',
-                                    style: TextStyle(color: Colors.white))),
-                            DropdownMenuItem(
-                                value: '2.0',
-                                child: Text('2.0x (Velmi velká)',
-                                    style: TextStyle(color: Colors.white))),
-                            DropdownMenuItem(
-                                value: '3.0',
-                                child: Text('3.0x (Obrovská)',
-                                    style: TextStyle(color: Colors.white))),
-                          ],
-                          onChanged: (value) {
-                            if (value != null)
-                              setStateDropdown(() => selectedSize = value);
-                          },
-                        );
-                      },
-                    ),
-                  ],
-                ),
+        return Dialog(
+          backgroundColor: Colors.grey[900],
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('NASTAVENÍ',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
 
-                const SizedBox(height: 20),
-
-                // --- API KEY pole ---
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Google API Key',
-                      style: TextStyle(color: Colors.white70, fontSize: 12)),
-                ),
-                const SizedBox(height: 4),
-                TextField(
-                  controller: apiKeyController,
-                  style: const TextStyle(color: Colors.black),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // --- Calendar ID pole ---
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Google Calendar ID',
-                      style: TextStyle(color: Colors.white70, fontSize: 12)),
-                ),
-                const SizedBox(height: 4),
-                TextField(
-                  controller: calendarIdController,
-                  style: const TextStyle(color: Colors.black),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // --- Tlačítka ---
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                  // 1️⃣ Velikost textu
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Velikost textu',
+                          style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const SizedBox(height: 4),
+                      StatefulBuilder(
+                        builder: (context, setStateDropdown) {
+                          return DropdownButton<String>(
+                            value: tempSize,
+                            dropdownColor: Colors.grey[800],
+                            isExpanded: true,
+                            items: const [
+                              DropdownMenuItem(value: '0.5', child: Text('0.5x (Velmi malá)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '0.75', child: Text('0.75x (Malá)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '1.0', child: Text('1.0x (Normální)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '1.25', child: Text('1.25x (Větší)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '1.5', child: Text('1.5x (Velká)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '2.0', child: Text('2.0x (Velmi velká)', style: TextStyle(color: Colors.white))),
+                              DropdownMenuItem(value: '3.0', child: Text('3.0x (Obrovská)', style: TextStyle(color: Colors.white))),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) setStateDropdown(() => tempSize = value);
+                            },
+                          );
+                        },
                       ),
-                      child: const Text('ZRUŠIT',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        // přepíšeme 8. a 9. řádek (indexy 7,8,9 odpovídají řádkům 8,9,10)
-                        while (lines.length < 10) {
-                          lines.add('');
-                        }
+                    ],
+                  ),
+                  const SizedBox(height: 8),
 
-                        lines[7] = selectedSize;
-                        lines[8] = apiKeyController.text;
-                        lines[9] = calendarIdController.text;
-
-                        await FileUtils.writeToFile(
-                            lines.join('\n'), moznostiFilename);
-                        await _loadFontSize();
-                        await _loadTodayEvents(); // přenačteme s novým API klíčem
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('NASTAVENÍ ULOŽENO'),
-                            backgroundColor:
-                            barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                        barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                  // 2️⃣ Defaultní jazyk (latina)
+                  Row(
+                    children: [
+                      const Expanded(child: Text('Použít latinu jako výchozí:', style: TextStyle(color: Colors.white70))),
+                      StatefulBuilder(
+                        builder: (context, setStateCheck) {
+                          return Checkbox(
+                            value: tempLatin,
+                            onChanged: (val) => setStateCheck(() => tempLatin = val ?? false),
+                            fillColor: MaterialStateProperty.all(Colors.white),
+                            checkColor: Colors.black,
+                          );
+                        },
                       ),
-                      child: const Text('ULOŽIT',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 3️⃣ Calendar ID
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'API Key',
+                      labelStyle: TextStyle(color: Colors.white70),
+                      filled: true,
+                      fillColor: Colors.white24,
+                      border: OutlineInputBorder(),
                     ),
-                  ],
-                ),
-              ],
+                    style: const TextStyle(color: Colors.white),
+                    controller: TextEditingController(text: tempCalendarId),
+                    onChanged: (val) => tempCalendarId = val,
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 4️⃣ API Key
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Calendar ID',
+                      labelStyle: TextStyle(color: Colors.white70),
+                      filled: true,
+                      fillColor: Colors.white24,
+                      border: OutlineInputBorder(),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                    controller: TextEditingController(text: tempApiKey),
+                    onChanged: (val) => tempApiKey = val,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueGrey,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('ZRUŠIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          // upravit řádky 8–11
+                          while (lines.length < 11) lines.add('');
+                          lines[7] = tempSize;
+                          lines[8] = tempCalendarId;
+                          lines[9] = tempApiKey;
+                          lines[10] = tempLatin.toString();
+
+                          await FileUtils.writeToFile(lines.join('\n'), moznostiFilename);
+
+                          setState(() {
+                            _scaleFactor = double.tryParse(tempSize) ?? 1.0;
+                            _baseScaleFactor = _scaleFactor;
+                            _latin = tempLatin;
+                          });
+
+                          Navigator.pop(context);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('NASTAVENÍ ULOŽENO'),
+                              backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+
 
 
   Widget _buildHtmlToolbar(TextEditingController controller) {
@@ -1096,6 +1123,14 @@ class HtmlText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    // Nastavit barvu status baru
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.black, // barva pod notchem / status barem
+        statusBarIconBrightness: Brightness.light, // ikony bílé
+      ),
+    );
     final document = html_parser.parse(htmlContent);
     final body = document.body;
     if (body == null) {
