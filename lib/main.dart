@@ -98,6 +98,7 @@ class _MainActivityState extends State<MainActivity> {
   Color barvaTextuFunTlacitek = Colors.black;
 
   bool _latin = false; // false = Česky, true = Latinsky
+  String _calendarId = '';
 
   @override
   void initState() {
@@ -455,7 +456,10 @@ class _MainActivityState extends State<MainActivity> {
           _baseScaleFactor = _scaleFactor;
         });
       }
-      if (lines.length > 10) {
+      if (lines.length > 8) {
+        _calendarId = lines[8].trim();
+      }
+      if (lines.length > 9) {
         _latin = lines[9].trim().toLowerCase() == 'true';
       }
     } catch (e) {
@@ -786,6 +790,7 @@ class _MainActivityState extends State<MainActivity> {
             controller: controller,
             maxLines: null,
             expands: true,
+            textAlignVertical: TextAlignVertical.top,
             style: const TextStyle(color: Colors.black),
             decoration: const InputDecoration(
               filled: true,
@@ -1184,7 +1189,7 @@ class _MainActivityState extends State<MainActivity> {
                   // 4️⃣ API Key
                   TextField(
                     decoration: const InputDecoration(
-                      labelText: 'Google kalendář ID',
+                      labelText: 'Google kalendář ID - NESAHAT!!!',
                       labelStyle: TextStyle(color: Colors.white70),
                       filled: true,
                       fillColor: Colors.white24,
@@ -1519,10 +1524,30 @@ class FileUtils {
 
       if (!await file.exists()) {
         if (fileName == 'intentions.txt') {
-          return '<a href="https://escriva.org/cs">escriva.org/cs</a> &nbsp;&nbsp; <a href="https://opusdei.cz">Opus Dei</a> &nbsp;&nbsp; <a href="https://catholica.cz">catholica.cz</a><br/><br/><a href="https://kalendar.katolik.cz">kalendar.katolik.cz</a> &nbsp;&nbsp; <a href="https://studiovox.cz">studiovox.cz</a>\n<font color="red">Cor Mariae dulcissimum, iter para tutum</font>';
+          return '[opusdei.cz](https://opusdei.cz)  [escriva.org/cs](https://escriva.org/cs)  [Studio Vox](https://studiovox.cz)\n'
+              '**Petr**\n'
+              '*Pavel*\n'
+              '<red>Simon</red>\n'
+              '<purple>Matous</purple>\n'
+              '<yellow>Jan</yellow>\n'
+              '- Filip\n'
+              '- Natanael\n'
+              'Jakub';
+        }
+        if (fileName == 'notes.txt') {
+          return 'Zpytování svědomí';
         }
         if (fileName == 'moznosti.txt') {
-          return 'Sancta Maria, Mater misericordiae, succurre animabus in purgatorio\nSancte Angele, adiuva nos\nSancte Ioseph, ora pro nobis\nIesu, in te confido\nPer crucem et passionem tuam, Domine, libera nos\nCor Mariae dulcissimum, iter para tutum\nGloria Patri, et Filio, et Spiritui Sancto';
+            return 'Sancta Maria, Mater misericordiae, succurre animabus in purgatorio, den stráže, otec, bratři\n'
+                'Sancti Angeli Custodes nostri, deféndite nos, kolegové\n'
+                'Sancte Ioseph, ora pro nobis, rodina, rodiče\n'
+                'Iesu, in te confido, povolání, věrnost\n'
+                'Per crucem et passionem tuam, Domine, libera nos, kamarádi\n'
+                'Cor Mariae dulcissimum, iter para tutum, apoštoláty\n'
+                'Gloria Patri, et Filio, et Spiritui Sancto, díkůvzdání, papež\n'
+                '1.0\n'      // řádek 8: velikost písma
+                'k9grn9pcub347543afce5uiv50@group.calendar.google.com\n'         // řádek 9: calendar ID (prázdné)
+                'false';     // řádek 10: latina (false)
         }
         return '';
       }
@@ -1530,10 +1555,30 @@ class FileUtils {
       return await file.readAsString();
     } catch (e) {
       if (fileName == 'intentions.txt') {
-        return '<a href="https://escriva.org/cs">escriva.org/cs</a>';
+        return '[opusdei.cz](https://opusdei.cz)  [escriva.org/cs](https://escriva.org/cs)  [Studio Vox](https://studiovox.cz)\n'
+            '**Petr**\n'
+            '*Pavel*\n'
+            '<red>Simon</red>\n'
+            '<purple>Matous</purple>\n'
+            '<yellow>Jan</yellow>\n'
+            '- Filip\n'
+            '- Natanael\n'
+            'Jakub';
+      }
+      if (fileName == 'notes.txt') {
+        return 'Zpytování svědomí';
       }
       if (fileName == 'moznosti.txt') {
-        return 'Cor Mariae dulcissimum, iter para tutum';
+        return 'Sancta Maria, Mater misericordiae, succurre animabus in purgatorio, den stráže, otec, bratři\n'
+            'Sancti Angeli Custodes nostri, deféndite nos, kolegové\n'
+            'Sancte Ioseph, ora pro nobis, rodina, rodiče\n'
+            'Iesu, in te confido, povolání, věrnost\n'
+            'Per crucem et passionem tuam, Domine, libera nos, kamarádi\n'
+            'Cor Mariae dulcissimum, iter para tutum, apoštoláty\n'
+            'Gloria Patri, et Filio, et Spiritui Sancto, díkůvzdání, papež\n'
+            '1.0\n'      // řádek 8: velikost písma
+            'k9grn9pcub347543afce5uiv50@group.calendar.google.com\n'         // řádek 9: calendar ID (prázdné)
+            'false';     //
       }
       return '';
     }
