@@ -377,37 +377,30 @@ class _MainActivityState extends State<MainActivity> {
   Widget _buildButtonBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 5, 8, 3),
-      child: GridView.count(
-        crossAxisCount: 4,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        childAspectRatio: 2.67,
-        children: [
-          _NavButton('Úmysly', _clickHome, barvaTextuNavTlacitek),
-          _NavButton(
-              'Modlitby', () => _setView('prayers'), barvaTextuNavTlacitek),
-          _NavButton(
-              '2. Žalm', () => _setView('psalm2'), barvaTextuNavTlacitek),
-          _NavButton(
-              'Adoro te', () => _setView('adoro'), barvaTextuNavTlacitek),
-          _NavButton('Trium', () => _setView('trium'), barvaTextuNavTlacitek),
-          _NavButton(
-              'Quicumque', () => _setView('quicumque'), barvaTextuNavTlacitek),
-          _NavButton(
-              'Maria', () => _setView('litanie'), barvaTextuNavTlacitek),
-          _NavButton(
-              'Přede mší', () => _setView('beforeMass'), barvaTextuNavTlacitek),
-          _NavButton(
-              'Po mši', () => _setView('afterMass'), barvaTextuNavTlacitek),
-          _NavButton(
-              'Při mši', () => _setView('onMass'), barvaTextuNavTlacitek),
-          _NavButton(
-              'Poznámky', () => _setView('notes'), barvaTextuFunTlacitek),
-          _NavButton(
-              'Úmysly', () => _setView('intentions'), barvaTextuFunTlacitek),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Vypočítat šířku tlačítka (4 tlačítka vedle sebe s mezerami)
+          final buttonWidth = (constraints.maxWidth - (3 * 6)) / 4;
+
+          return Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _NavButton('Úmysly', _clickHome, barvaTextuNavTlacitek, buttonWidth),
+              _NavButton('Modlitby', () => _setView('prayers'), barvaTextuNavTlacitek, buttonWidth),
+              _NavButton('2. Žalm', () => _setView('psalm2'), barvaTextuNavTlacitek, buttonWidth),
+              _NavButton('Adoro te', () => _setView('adoro'), barvaTextuNavTlacitek, buttonWidth),
+              _NavButton('Trium', () => _setView('trium'), barvaTextuNavTlacitek, buttonWidth),
+              _NavButton('Quicumque', () => _setView('quicumque'), barvaTextuNavTlacitek, buttonWidth),
+              _NavButton('Maria', () => _setView('litanie'), barvaTextuNavTlacitek, buttonWidth),
+              _NavButton('Přede mší', () => _setView('beforeMass'), barvaTextuNavTlacitek, buttonWidth),
+              _NavButton('Po mši', () => _setView('afterMass'), barvaTextuNavTlacitek, buttonWidth),
+              _NavButton('Při mši', () => _setView('onMass'), barvaTextuNavTlacitek, buttonWidth),
+              _NavButton('Poznámky', () => _setView('notes'), barvaTextuFunTlacitek, buttonWidth),
+              _NavButton('Úmysly', () => _setView('intentions'), barvaTextuFunTlacitek, buttonWidth),
+            ],
+          );
+        },
       ),
     );
   }
@@ -492,7 +485,7 @@ class _MainActivityState extends State<MainActivity> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                     foregroundColor: barvaTextuNavTlacitek,
-                    padding: const EdgeInsets.symmetric(vertical: 6), // menší výška
+                    padding: const EdgeInsets.symmetric(vertical: 15), // menší výška
                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -513,7 +506,7 @@ class _MainActivityState extends State<MainActivity> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                     foregroundColor: barvaTextuNavTlacitek,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -558,7 +551,7 @@ class _MainActivityState extends State<MainActivity> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                     foregroundColor: barvaTextuNavTlacitek,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -625,33 +618,42 @@ class _MainActivityState extends State<MainActivity> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        final oldContent =
-                            await FileUtils.readFromFile(moznostiFilename);
+                        // Načti celý obsah
+                        final oldContent = await FileUtils.readFromFile(moznostiFilename);
                         final oldLines = oldContent.split('\n');
-                        final fontSizeLine =
-                            oldLines.length > 7 ? oldLines[7] : '1.0';
-                        final newLines = [
-                          ...controllers.map((c) {
-                            String clean =
-                                c.text.replaceAll(RegExp(r'[\n\r\t]'), '');
-                            if (clean.length > 200)
-                              clean = clean.substring(0, 200);
-                            return clean;
-                          }),
-                          fontSizeLine
-                        ];
-                        await FileUtils.writeToFile(
-                            newLines.join('\n'), moznostiFilename);
+
+                        // Ujisti se, že má soubor aspoň 11 řádků
+                        while (oldLines.length < 11) {
+                          oldLines.add('');
+                        }
+
+                        // Ulož 7 mott se sanitizací
+                        for (int i = 0; i < 7; i++) {
+                          String clean = controllers[i].text.replaceAll(RegExp(r'[\n\r\t]'), '');
+                          if (clean.length > 200) clean = clean.substring(0, 200);
+                          oldLines[i] = clean;
+                        }
+
+                        // Znovu slož soubor
+                        final newContent = oldLines.join('\n');
+
+                        // Zapiš zpět
+                        await FileUtils.writeToFile(newContent, moznostiFilename);
+
+                        // Obnov motto dne
                         await _loadDailyMotto();
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('TÉMATA ULOŽENA'),
-                            backgroundColor:
-                                Colors.amber,
-                          ),
-                        );
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('TÉMATA ULOŽENA'),
+                              backgroundColor: Colors.amber,
+                            ),
+                          );
+                        }
                       },
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
                             barvaFunkcnichTlacitekVyberuTextuAKurzoru,
@@ -725,26 +727,40 @@ class _MainActivityState extends State<MainActivity> {
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        final oldContent =
-                            await FileUtils.readFromFile(moznostiFilename);
+                        // Načti celý obsah
+                        final oldContent = await FileUtils.readFromFile(moznostiFilename);
                         final oldLines = oldContent.split('\n');
-                        final fontSizeLine =
-                            oldLines.length > 7 ? oldLines[7] : '1.0';
-                        final newLines = [
-                          ...controllers.map((c) => c.text),
-                          fontSizeLine
-                        ];
-                        await FileUtils.writeToFile(
-                            newLines.join('\n'), moznostiFilename);
+
+                        // Ujisti se, že má soubor aspoň 11 řádků
+                        while (oldLines.length < 11) {
+                          oldLines.add('');
+                        }
+
+                        // Ulož 7 mott se sanitizací
+                        for (int i = 0; i < 7; i++) {
+                          String clean = controllers[i].text.replaceAll(RegExp(r'[\n\r\t]'), '');
+                          if (clean.length > 200) clean = clean.substring(0, 200);
+                          oldLines[i] = clean;
+                        }
+
+                        // Znovu slož soubor
+                        final newContent = oldLines.join('\n');
+
+                        // Zapiš zpět
+                        await FileUtils.writeToFile(newContent, moznostiFilename);
+
+                        // Obnov motto dne
                         await _loadDailyMotto();
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('TÉMATA ULOŽENA'),
-                            backgroundColor:
-                                Colors.amber,
-                          ),
-                        );
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('TÉMATA ULOŽENA'),
+                              backgroundColor: Colors.amber,
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
@@ -1089,30 +1105,31 @@ class _MainActivityState extends State<MainActivity> {
   }
 }
 
-Widget _NavButton(String label, VoidCallback onPressed, Color textColor) {
-  return ElevatedButton(
-    onPressed: onPressed,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.blueGrey,
-      foregroundColor: textColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+Widget _NavButton(String label, VoidCallback onPressed, Color textColor, double width) {
+  return SizedBox(
+    width: width,
+    height: 42, // Fixní výška tlačítka
+    child: ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blueGrey,
+        foregroundColor: textColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        minimumSize: const Size(0, 0),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-      padding: EdgeInsets.zero,
-      minimumSize: const Size(0, 48),
-    ),
-    child: Center(
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            label.toUpperCase(),
-            maxLines: 1,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
+        child: Text(
+          label.toUpperCase(),
+          maxLines: 1,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
           ),
         ),
       ),
