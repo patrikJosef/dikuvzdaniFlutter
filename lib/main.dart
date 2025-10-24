@@ -85,7 +85,6 @@ class MainActivity extends StatefulWidget {
 }
 
 class _MainActivityState extends State<MainActivity> {
-  final TextEditingController _taskListController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _intentionsController = TextEditingController();
 
@@ -123,12 +122,10 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   Future<void> _loadFiles() async {
-    final taskList = await FileUtils.readFromFile(taskListFilename);
     final notes = await FileUtils.readFromFile(notesFilename);
     final intentions = await FileUtils.readFromFile(intentionsFilename);
 
     setState(() {
-      _taskListController.text = taskList;
       _notesController.text = notes;
       _intentionsController.text = intentions;
     });
@@ -252,7 +249,6 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   Future<void> _saveFiles() async {
-    await FileUtils.writeToFile(_taskListController.text, taskListFilename);
     await FileUtils.writeToFile(_notesController.text, notesFilename);
     await FileUtils.writeToFile(_intentionsController.text, intentionsFilename);
 
@@ -267,7 +263,7 @@ class _MainActivityState extends State<MainActivity> {
 
     if (_sendMailChecked) {
       final shareContent =
-          '${_taskListController.text}\n\n${_notesController.text}\n\n${_intentionsController.text}';
+          '${_notesController.text}\n\n${_intentionsController.text}';
 
       await Share.share(
         shareContent,
@@ -435,8 +431,7 @@ class _MainActivityState extends State<MainActivity> {
   }
 
   Widget _buildHomeView() {
-    final content =
-        '${_taskListController.text}\n\n${_intentionsController.text}';
+    final content = _intentionsController.text;
 
     return GestureDetector(
       onScaleStart: (details) => _baseScaleFactor = _scaleFactor,
@@ -1081,7 +1076,6 @@ class _MainActivityState extends State<MainActivity> {
 
   @override
   void dispose() {
-    _taskListController.dispose();
     _notesController.dispose();
     _intentionsController.dispose();
     super.dispose();
@@ -1308,7 +1302,6 @@ class HtmlText extends StatelessWidget {
 }
 
 // 📄 názvy souborů používaných pro ukládání dat
-const String taskListFilename = 'tasklist.txt';
 const String notesFilename = 'notes.txt';
 const String intentionsFilename = 'intentions.txt';
 const String moznostiFilename = 'moznosti.txt';
