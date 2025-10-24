@@ -146,7 +146,7 @@ class _MainActivityState extends State<MainActivity> {
       final content = await FileUtils.readFromFile(moznostiFilename);
       final lines = content.split('\n');
       const apiKey = String.fromEnvironment('GOOGLE_API_KEY');
-      final calendarId = lines.length > 9 ? lines[9].trim() : '';
+      final calendarId = lines.length >  8? lines[8].trim() : '';
 
       if (apiKey.isEmpty || calendarId.isEmpty) {
         print('❌ API key nebo Calendar ID nejsou nastaveny.');
@@ -222,7 +222,7 @@ class _MainActivityState extends State<MainActivity> {
         });
       }
       if (lines.length > 10) {
-        _latin = lines[10].trim().toLowerCase() == 'true';
+        _latin = lines[9].trim().toLowerCase() == 'true';
       }
     } catch (e) {
       // Default value
@@ -769,7 +769,7 @@ class _MainActivityState extends State<MainActivity> {
                         final oldLines = oldContent.split('\n');
 
                         // Ujisti se, že má soubor aspoň 11 řádků
-                        while (oldLines.length < 11) {
+                        while (oldLines.length < 10) {
                           oldLines.add('');
                         }
 
