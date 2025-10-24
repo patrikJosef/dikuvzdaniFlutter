@@ -12,6 +12,7 @@ import 'package:share_plus/share_plus.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 void main() {
   runApp(const MyApp());
@@ -410,7 +411,7 @@ class _MainActivityState extends State<MainActivity> {
   Widget _buildMainContent() {
     switch (_currentView) {
       case 'home':
-        return _buildHomeView();
+        return _buildHomeView('intentions');
       case 'notes':
         return _buildEditableView('notes');
       case 'intentions':
@@ -426,35 +427,85 @@ class _MainActivityState extends State<MainActivity> {
       case 'litanie':
         return _buildTextView(_currentView);
       default:
-        return _buildHomeView();
+        return _buildHomeView('intentions');
     }
   }
 
-  Widget _buildHomeView() {
-    final content = _intentionsController.text;
+// ------------------------
+// HOME VIEW – pouze Markdown
+// ------------------------
+  Widget _buildHomeView(String type) {
+    final text = type == 'notes' ? _notesController.text : _intentionsController.text;
 
-    return GestureDetector(
-      onScaleStart: (details) => _baseScaleFactor = _scaleFactor,
-      onScaleUpdate: (details) => setState(() =>
-          _scaleFactor = (_baseScaleFactor * details.scale).clamp(0.5, 3.0)),
-      onScaleEnd: (details) => _baseScaleFactor = _scaleFactor,
+    // Opraví odřádkování (Markdown ignoruje jednoduché \n)
+    final formattedText = text.replaceAll('\n', '  \n'); // 2 mezery + newline
+
+    return Container(
+      color: Colors.black,
+      padding: const EdgeInsets.all(12),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: HtmlText(
-          content,
-          scaleFactor: _scaleFactor,
+        child: MarkdownBody(
+          data: formattedText,
+          styleSheet: MarkdownStyleSheet(
+            p: const TextStyle(color: Colors.white, fontSize: 18, height: 1.4),
+          ),
         ),
       ),
     );
   }
 
+
+// ------------------------
+// EDITABLE VIEW – Markdown s toolbar a funkcemi
+// ------------------------
   Widget _buildEditableView(String type) {
-    final controller =
-        type == 'notes' ? _notesController : _intentionsController;
+    final controller = type == 'notes' ? _notesController : _intentionsController;
+
+    // Funkce pro toolbar
+    void wrapSelection(String left, String right) {
+      final sel = controller.selection;
+      final text = controller.text;
+      final before = text.substring(0, sel.start);
+      final selected = text.substring(sel.start, sel.end);
+      final after = text.substring(sel.end);
+      final newText = '$before$left$selected$right$after';
+      controller.text = newText;
+      controller.selection = TextSelection.collapsed(offset: sel.end + left.length + right.length);
+    }
 
     return Column(
       children: [
-        if (type == 'intentions') _buildHtmlToolbar(controller),
+        // Toolbar pro Markdown
+        if (type == 'intentions')
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.format_bold),
+                  color: Colors.white,
+                  onPressed: () => wrapSelection('**', '**'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.format_italic),
+                  color: Colors.white,
+                  onPressed: () => wrapSelection('*', '*'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.link),
+                  color: Colors.white,
+                  onPressed: () => wrapSelection('[', '](url)'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.format_list_bulleted),
+                  color: Colors.white,
+                  onPressed: () => wrapSelection('- ', ''),
+                ),
+              ],
+            ),
+          ),
+
+        // Editor
         Expanded(
           child: TextField(
             controller: controller,
@@ -468,6 +519,8 @@ class _MainActivityState extends State<MainActivity> {
             ),
           ),
         ),
+
+        // Dolní tlačítka
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(
@@ -480,20 +533,16 @@ class _MainActivityState extends State<MainActivity> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
                     foregroundColor: barvaTextuNavTlacitek,
-                    padding: const EdgeInsets.symmetric(vertical: 15), // menší výška
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    minimumSize: const Size(0, 0),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   child: const Text('NASTAVENÍ'),
                 ),
               ),
-
-              const SizedBox(width: 6), // 🔹 menší mezera
-
+              const SizedBox(width: 6),
               // 🔹 TÉMATA
               Expanded(
                 child: ElevatedButton(
@@ -506,25 +555,20 @@ class _MainActivityState extends State<MainActivity> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    minimumSize: const Size(0, 0),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   child: const Text('TÉMATA'),
                 ),
               ),
-
               const SizedBox(width: 6),
-
-              // 🔹 Checkbox + Text zarovnaný na střed
+              // 🔹 Checkbox ZÁLOHOVAT
               Row(
                 children: [
                   Checkbox(
                     value: _sendMailChecked,
-                    onChanged: (val) =>
-                        setState(() => _sendMailChecked = val ?? false),
+                    onChanged: (val) => setState(() => _sendMailChecked = val ?? false),
                     fillColor: const MaterialStatePropertyAll(Colors.white),
                     checkColor: Colors.black,
-                    visualDensity: VisualDensity.compact, // 🔹 zmenšený checkbox
+                    visualDensity: VisualDensity.compact,
                   ),
                   const Text(
                     'ZÁLOHOVAT',
@@ -536,9 +580,7 @@ class _MainActivityState extends State<MainActivity> {
                   ),
                 ],
               ),
-
               const SizedBox(width: 6),
-
               // 🔹 ULOŽIT
               Expanded(
                 child: ElevatedButton(
@@ -551,19 +593,19 @@ class _MainActivityState extends State<MainActivity> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    minimumSize: const Size(0, 0),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   child: const Text('ULOŽIT'),
                 ),
               ),
             ],
-          )
-
+          ),
         ),
       ],
     );
   }
+
+
+
 
 // --- dialog TÉMATA (7 políček + ZRUŠIT a ULOŽIT) ---
   Future<void> _showTemataDialog() async {
@@ -938,120 +980,6 @@ class _MainActivityState extends State<MainActivity> {
 
 
 
-  Widget _buildHtmlToolbar(TextEditingController controller) {
-    return Container(
-      color: Colors.grey[900],
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(
-        children: [
-          _htmlButton('B', () => _wrapSelectionWith(controller, '<b>', '</b>')),
-          _htmlButton('I', () => _wrapSelectionWith(controller, '<i>', '</i>')),
-          _htmlButton('🔗', () => _insertLink(controller)),
-          _colorPicker(controller),
-          const Spacer(),
-          const Text('HTML',
-              style: TextStyle(color: Colors.white70, fontSize: 12)),
-        ],
-      ),
-    );
-  }
-
-  Widget _htmlButton(String label, VoidCallback onPressed) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.grey[800],
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-      ),
-      onPressed: onPressed,
-      child: Text(label),
-    );
-  }
-
-  Widget _colorPicker(TextEditingController controller) {
-    const colorMap = {
-      'red': 'Červená',
-      'blue': 'Modrá',
-      'green': 'Zelená',
-      'orange': 'Oranžová',
-      'purple': 'Fialová',
-      'pink': 'Růžová',
-    };
-
-    return DropdownButton<String>(
-      dropdownColor: Colors.grey[900],
-      hint: const Text('Barva',
-          style: TextStyle(color: Colors.white, fontSize: 12)),
-      items: colorMap.entries.map((entry) {
-        final value = entry.key;
-        final label = entry.value;
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(
-            label,
-            style: TextStyle(color: _parseColorForToolbar(value)),
-          ),
-        );
-      }).toList(),
-      onChanged: (String? selectedColor) {
-        if (selectedColor != null) {
-          _wrapSelectionWith(
-              controller, '<font color="$selectedColor">', '</font>');
-        }
-      },
-    );
-  }
-
-  Color _parseColorForToolbar(String colorStr) {
-    switch (colorStr) {
-      case 'red':
-        return Colors.red;
-      case 'blue':
-        return Colors.blue;
-      case 'green':
-        return Colors.green;
-      case 'orange':
-        return Colors.orange;
-      case 'purple':
-        return Colors.purple;
-      case 'pink':
-        return Colors.pinkAccent;
-      default:
-        return Colors.white;
-    }
-  }
-
-  void _wrapSelectionWith(
-      TextEditingController controller, String startTag, String endTag) {
-    final text = controller.text;
-    final selection = controller.selection;
-
-    if (!selection.isValid || selection.isCollapsed) return;
-
-    final selectedText = selection.textInside(text);
-    final before = selection.textBefore(text);
-    final after = selection.textAfter(text);
-
-    final newText = '$before$startTag$selectedText$endTag$after';
-
-    controller.text = newText;
-    controller.selection = TextSelection.collapsed(
-        offset: (before + startTag + selectedText + endTag).length);
-  }
-
-  void _insertLink(TextEditingController controller) {
-    final selectedText = controller.selection.textInside(controller.text);
-    final url = 'https://example.com';
-
-    final link = '<a href="$url">$selectedText</a>';
-    final before = controller.selection.textBefore(controller.text);
-    final after = controller.selection.textAfter(controller.text);
-
-    controller.text = '$before$link$after';
-    controller.selection =
-        TextSelection.collapsed(offset: (before + link).length);
-  }
-
   Widget _buildTextView(String viewId) {
     final path = _latin
         ? _latinVariant('assets/texts/$viewId.txt') // např. psalm2_lat.txt
@@ -1080,6 +1008,8 @@ class _MainActivityState extends State<MainActivity> {
     _intentionsController.dispose();
     super.dispose();
   }
+
+  void _launchUrl(String href) {}
 }
 
 Widget _NavButton(String label, VoidCallback onPressed, Color textColor, double width) {

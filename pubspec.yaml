@@ -20,11 +20,12 @@ dependencies:
   url_launcher: ^6.3.0
   html: ^0.15.4
   share_plus: ^10.0.2
-  html_editor_enhanced: ^2.6.0
   flutter_html: ^3.0.0
   gesture_x_detector: ^1.1.1
   cupertino_icons: ^1.0.8
   http: ^1.2.0
+  flutter_markdown: ^0.6.23  # nebo jiná dostupná verze
+  markdown: ^7.3.0
 
 dev_dependencies:
   flutter_test:
