@@ -147,7 +147,7 @@ class _MainActivityState extends State<MainActivity> {
       // načtení API key a calendarId z moznosti.txt
       final content = await FileUtils.readFromFile(moznostiFilename);
       final lines = content.split('\n');
-      final apiKey = lines.length > 8 ? lines[8].trim() : '';
+      const apiKey = String.fromEnvironment('GOOGLE_API_KEY');
       final calendarId = lines.length > 9 ? lines[9].trim() : '';
 
       if (apiKey.isEmpty || calendarId.isEmpty) {
@@ -793,8 +793,7 @@ class _MainActivityState extends State<MainActivity> {
     // Předvyplněné hodnoty
     String selectedSize = (lines.length > 7 && lines[7].trim().isNotEmpty) ? lines[7].trim() : '1.0';
     String calendarId = (lines.length > 8) ? lines[8].trim() : '';
-    String apiKey = (lines.length > 9) ? lines[9].trim() : '';
-    bool latinFlag = (lines.length > 10) ? lines[10].trim().toLowerCase() == 'true' : false;
+    bool latinFlag = (lines.length > 9) ? lines[9].trim().toLowerCase() == 'true' : false;
 
     if (!mounted) return;
 
@@ -803,7 +802,6 @@ class _MainActivityState extends State<MainActivity> {
       builder: (context) {
         String tempSize = selectedSize;
         String tempCalendarId = calendarId;
-        String tempApiKey = apiKey;
         bool tempLatin = latinFlag;
 
         return Dialog(
@@ -871,10 +869,10 @@ class _MainActivityState extends State<MainActivity> {
                   ),
                   const SizedBox(height: 8),
 
-                  // 3️⃣ Calendar ID
+                  // 4️⃣ API Key
                   TextField(
                     decoration: const InputDecoration(
-                      labelText: 'API Key',
+                      labelText: 'Google kalendář ID',
                       labelStyle: TextStyle(color: Colors.white70),
                       filled: true,
                       fillColor: Colors.white24,
@@ -883,21 +881,6 @@ class _MainActivityState extends State<MainActivity> {
                     style: const TextStyle(color: Colors.white),
                     controller: TextEditingController(text: tempCalendarId),
                     onChanged: (val) => tempCalendarId = val,
-                  ),
-                  const SizedBox(height: 8),
-
-                  // 4️⃣ API Key
-                  TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Calendar ID',
-                      labelStyle: TextStyle(color: Colors.white70),
-                      filled: true,
-                      fillColor: Colors.white24,
-                      border: OutlineInputBorder(),
-                    ),
-                    style: const TextStyle(color: Colors.white),
-                    controller: TextEditingController(text: tempApiKey),
-                    onChanged: (val) => tempApiKey = val,
                   ),
 
                   const SizedBox(height: 12),
@@ -916,12 +899,12 @@ class _MainActivityState extends State<MainActivity> {
                       ),
                       ElevatedButton(
                         onPressed: () async {
-                          // upravit řádky 8–11
-                          while (lines.length < 11) lines.add('');
+                          // upravit řádky 8–10
+                          while (lines.length < 10) lines.add('');
                           lines[7] = tempSize;
                           lines[8] = tempCalendarId;
-                          lines[9] = tempApiKey;
-                          lines[10] = tempLatin.toString();
+                          lines[9] = tempLatin.toString();
+
 
                           await FileUtils.writeToFile(lines.join('\n'), moznostiFilename);
 
