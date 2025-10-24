@@ -108,6 +108,240 @@ class _MainActivityState extends State<MainActivity> {
     _loadTodayEvents();
   }
 
+  List<InlineSpan> _parseSimpleMarkdown(String text, {Color? baseColor}) {
+    final spans = <InlineSpan>[];
+    final defaultColor = baseColor ?? Colors.white;
+
+    // Rozděl podle řádků pro zachování odřádkování
+    final lines = text.split('\n');
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      int lastIndex = 0;
+
+      // Najdi všechny formátovací prvky na řádku
+      final linkRegex = RegExp(r'\[([^\]]+)\]\(([^)]+)\)');
+      final boldRegex = RegExp(r'\*\*(.+?)\*\*');
+      final italicRegex = RegExp(r'\*(.+?)\*');
+
+      // Vytvoř seznam všech matches s jejich pozicemi a typy
+      final allMatches = <Map<String, dynamic>>[];
+
+      for (var m in linkRegex.allMatches(line)) {
+        allMatches.add({'start': m.start, 'end': m.end, 'match': m, 'type': 'link'});
+      }
+      for (var m in boldRegex.allMatches(line)) {
+        allMatches.add({'start': m.start, 'end': m.end, 'match': m, 'type': 'bold'});
+      }
+      for (var m in italicRegex.allMatches(line)) {
+        // Zkontroluj, zda není součástí bold (**text**)
+        bool isPartOfBold = false;
+        for (var boldMatch in allMatches.where((m) => m['type'] == 'bold')) {
+          if (m.start >= boldMatch['start'] && m.end <= boldMatch['end']) {
+            isPartOfBold = true;
+            break;
+          }
+        }
+        if (!isPartOfBold) {
+          allMatches.add({'start': m.start, 'end': m.end, 'match': m, 'type': 'italic'});
+        }
+      }
+
+      // Seřaď podle pozice
+      allMatches.sort((a, b) => a['start'].compareTo(b['start']));
+
+      // Odstraň překrývající se matches (upřednostni delší/dřívější)
+      final filteredMatches = <Map<String, dynamic>>[];
+      for (var match in allMatches) {
+        bool overlaps = false;
+        for (var existing in filteredMatches) {
+          if ((match['start'] >= existing['start'] && match['start'] < existing['end']) ||
+              (match['end'] > existing['start'] && match['end'] <= existing['end'])) {
+            overlaps = true;
+            break;
+          }
+        }
+        if (!overlaps) {
+          filteredMatches.add(match);
+        }
+      }
+
+      for (var matchData in filteredMatches) {
+        final match = matchData['match'] as Match;
+        final type = matchData['type'] as String;
+
+        // Přidej text před matchem
+        if (match.start > lastIndex) {
+          spans.add(TextSpan(
+            text: line.substring(lastIndex, match.start),
+            style: TextStyle(color: defaultColor, fontSize: 18, height: 1.4),
+          ));
+        }
+
+        // Zpracuj match podle typu
+        if (type == 'link') {
+          final linkText = match.group(1)!;
+          final url = match.group(2)!;
+          spans.add(TextSpan(
+            text: linkText,
+            style: TextStyle(
+              color: linkColor,
+              fontSize: 18,
+              height: 1.4,
+              decoration: TextDecoration.underline,
+            ),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => _launchUrlFromMarkdown(url),
+          ));
+        } else if (type == 'bold') {
+          spans.add(TextSpan(
+            text: match.group(1),
+            style: TextStyle(
+              color: defaultColor,
+              fontSize: 18,
+              height: 1.4,
+              fontWeight: FontWeight.bold,
+            ),
+          ));
+        } else if (type == 'italic') {
+          spans.add(TextSpan(
+            text: match.group(1),
+            style: TextStyle(
+              color: defaultColor,
+              fontSize: 18,
+              height: 1.4,
+              fontStyle: FontStyle.italic,
+            ),
+          ));
+        }
+
+        lastIndex = match.end;
+      }
+
+      // Přidej zbývající text na řádku
+      if (lastIndex < line.length) {
+        spans.add(TextSpan(
+          text: line.substring(lastIndex),
+          style: TextStyle(color: defaultColor, fontSize: 18, height: 1.4),
+        ));
+      }
+
+      // Přidej odřádkování kromě posledního řádku
+      if (i < lines.length - 1) {
+        spans.add(const TextSpan(text: '\n'));
+      }
+    }
+
+    return spans;
+  }
+
+  void _launchUrlFromMarkdown(String url) async {
+    final norm = _normalizeUrl(url);
+    final uri = Uri.parse(norm);
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  String _normalizeUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return 'https://$url';
+  }
+
+  Color _parseColor(String colorStr) {
+    final clean = colorStr.replaceFirst('#', '').toLowerCase();
+
+    const map = <String, Color>{
+      'red': Colors.red,
+      'blue': Colors.blue,
+      'green': Colors.green,
+      'orange': Colors.orange,
+      'purple': Colors.purple,
+      'pink': Colors.pinkAccent,
+      'white': Colors.white,
+      'yellow': Colors.yellow,
+      'grey': Colors.grey,
+    };
+
+    if (map.containsKey(clean)) {
+      return map[clean]!;
+    }
+
+    if (clean.length == 6) {
+      try {
+        return Color(int.parse('FF$clean', radix: 16));
+      } catch (_) {}
+    }
+
+    return Colors.white;
+  }
+
+  Widget _buildColoredMarkdown(String text) {
+    final spans = <InlineSpan>[];
+    int lastIndex = 0;
+
+    final colorRegex = RegExp(r'<(red|blue|green|orange|purple|pink|yellow|grey)>(.*?)</\1>', dotAll: true);
+
+    final matches = colorRegex.allMatches(text).toList();
+
+    for (var match in matches) {
+      // Přidej text před barevným textem
+      if (match.start > lastIndex) {
+        final beforeText = text.substring(lastIndex, match.start);
+        spans.addAll(_parseSimpleMarkdown(beforeText));
+      }
+
+      // Přidej barevný text (může obsahovat další formátování)
+      final colorName = match.group(1) ?? 'white';
+      final color = _parseColor(colorName);
+      final coloredText = match.group(2) ?? '';
+
+      // Parsuj markdown uvnitř barevného textu
+      spans.addAll(_parseSimpleMarkdown(coloredText, baseColor: color));
+
+      lastIndex = match.end;
+    }
+
+    // Přidej zbývající text
+    if (lastIndex < text.length) {
+      final remainingText = text.substring(lastIndex);
+      spans.addAll(_parseSimpleMarkdown(remainingText));
+    }
+
+    return SelectableText.rich(
+      TextSpan(children: spans),
+      style: const TextStyle(color: Colors.white, fontSize: 18, height: 1.4),
+    );
+  }
+
+  PopupMenuItem<String> _buildColorMenuItem(String label, String value, Color color) {
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.white30),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(label, style: const TextStyle(color: Colors.white)),
+        ],
+      ),
+    );
+  }
+
   String _latinVariant(String path) {
     if (path.endsWith('.txt')) {
       return path.replaceFirst('.txt', '_lat.txt');
@@ -437,8 +671,27 @@ class _MainActivityState extends State<MainActivity> {
   Widget _buildHomeView(String type) {
     final text = type == 'notes' ? _notesController.text : _intentionsController.text;
 
-    // Opraví odřádkování (Markdown ignoruje jednoduché \n)
-    final formattedText = text.replaceAll('\n', '  \n'); // 2 mezery + newline
+    // Zpracuj Markdown a HTML tagy současně
+    String processedText = text;
+
+    // Převeď jednoduché color tagy
+    // Regex najde <red>text</red>, <blue>text</blue> atd.
+    final colorRegex = RegExp(r'<(red|blue|green|orange|purple|pink|yellow|grey)>(.*?)</\1>', dotAll: true);
+    final matches = colorRegex.allMatches(processedText);
+
+    // Pokud jsou nějaké barvy, použij custom builder
+    if (matches.isNotEmpty) {
+      return Container(
+        color: Colors.black,
+        padding: const EdgeInsets.all(12),
+        child: SingleChildScrollView(
+          child: _buildColoredMarkdown(text),
+        ),
+      );
+    }
+
+    // Standardní Markdown bez barev
+    final formattedText = text.replaceAll('\n', '  \n');
 
     return Container(
       color: Colors.black,
@@ -448,7 +701,11 @@ class _MainActivityState extends State<MainActivity> {
           data: formattedText,
           styleSheet: MarkdownStyleSheet(
             p: const TextStyle(color: Colors.white, fontSize: 18, height: 1.4),
+            a: const TextStyle(color: linkColor, decoration: TextDecoration.underline),
           ),
+          onTapLink: (text, href, title) {
+            if (href != null) _launchUrlFromMarkdown(href);
+          },
         ),
       ),
     );
@@ -500,6 +757,24 @@ class _MainActivityState extends State<MainActivity> {
                   icon: const Icon(Icons.format_list_bulleted),
                   color: Colors.white,
                   onPressed: () => wrapSelection('- ', ''),
+                ),
+                // 🎨 Tlačítko pro barvy
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.palette, color: Colors.white),
+                  color: Colors.grey[800],
+                  onSelected: (color) {
+                    wrapSelection('<$color>', '</$color>');
+                  },
+                  itemBuilder: (context) => [
+                    _buildColorMenuItem('Červená', 'red', Colors.red),
+                    _buildColorMenuItem('Modrá', 'blue', Colors.blue),
+                    _buildColorMenuItem('Zelená', 'green', Colors.green),
+                    _buildColorMenuItem('Oranžová', 'orange', Colors.orange),
+                    _buildColorMenuItem('Fialová', 'purple', Colors.purple),
+                    _buildColorMenuItem('Růžová', 'pink', Colors.pinkAccent),
+                    _buildColorMenuItem('Žlutá', 'yellow', Colors.yellow),
+                    _buildColorMenuItem('Šedá', 'grey', Colors.grey),
+                  ],
                 ),
               ],
             ),
