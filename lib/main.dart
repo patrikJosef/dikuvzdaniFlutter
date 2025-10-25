@@ -19,56 +19,154 @@ void main() {
 }
 
 const linkColor = Colors.lightBlueAccent;
-const translucentBlue =
-Color.fromRGBO(3, 169, 244, 0.3); // RGB pro lightBlueAccent
-const barvaFunkcnichTlacitekVyberuTextuAKurzoru = translucentBlue;
-const barvaFunkcnichTlacitekVyberuTextuAKurzoruPrusvitnost =
-    Color.fromRGBO(255, 193, 7, 0.3);
 
+class ColorProfile {
+  final String name;
+  final Color solid;
+  final Color translucent;
+  final Color selection;
+  final Color navButtonTextColor;  // 🔹 NOVÉ
+  final Color funButtonTextColor;  // 🔹 NOVÉ
+  final Color funButtonSettingsColor;
 
-class MyApp extends StatelessWidget {
+  const ColorProfile({
+    required this.name,
+    required this.solid,
+    required this.translucent,
+    required this.selection,
+    required this.navButtonTextColor,
+    required this.funButtonTextColor,
+    required this.funButtonSettingsColor,
+  });
+}
+
+const Map<String, ColorProfile> colorProfiles = {
+  'Modrý': ColorProfile(
+    name: 'Modrý',
+    solid: Colors.blueGrey,
+    translucent: Color.fromRGBO(3, 169, 244, 0.3),
+    selection: Color.fromRGBO(255, 193, 7, 0.3),
+    navButtonTextColor: Colors.white,
+    funButtonTextColor: Colors.black,
+    funButtonSettingsColor: Colors.white,
+  ),
+  'Šedý': ColorProfile(
+    name: 'Šedý',
+    solid: Color.fromRGBO(158, 158, 158, 1.0),
+    translucent: Color.fromRGBO(158, 158, 158, 0.3),
+    selection: Color.fromRGBO(255, 193, 7, 0.3),
+    navButtonTextColor: Colors.black,
+    funButtonTextColor: Colors.white,
+    funButtonSettingsColor: Colors.white,
+  ),
+  'Růžový': ColorProfile(
+    name: 'Růžový',
+    solid: Color.fromRGBO(233, 30, 99, 1.0),
+    translucent: Color.fromRGBO(233, 30, 99, 0.3),
+    selection: Color.fromRGBO(255, 193, 7, 0.3),
+    navButtonTextColor: Colors.black,
+    funButtonTextColor: Colors.white,
+    funButtonSettingsColor: Colors.white,
+  ),
+  'Zelený': ColorProfile(
+    name: 'Zelený',
+    solid: Color.fromRGBO(76, 175, 80, 1.0),
+    translucent: Color.fromRGBO(76, 175, 80, 0.3),
+    selection: Color.fromRGBO(255, 193, 7, 0.3),
+    navButtonTextColor: Colors.black,
+    funButtonTextColor: Colors.white,
+    funButtonSettingsColor: Colors.white,
+  ),
+  'Žlutý': ColorProfile(
+    name: 'Žlutý',
+    solid: Color.fromRGBO(255, 193, 7, 1.0),
+    translucent: Color.fromRGBO(255, 193, 7, 0.3),
+    selection: Color.fromRGBO(3, 169, 244, 0.3),
+    navButtonTextColor: Colors.black,  // 🔹 Černý text pro žlutou
+    funButtonTextColor: Colors.white,
+    funButtonSettingsColor: Colors.white,
+  ),
+  'Tmavě modrý': ColorProfile(
+    name: 'Tmavě modrý',
+    solid: Color.fromRGBO(13, 71, 161, 1.0),  // tmavě modrá
+    translucent: Color.fromRGBO(13, 71, 161, 0.3),
+    selection: Color.fromRGBO(255, 193, 7, 0.3),
+    navButtonTextColor: Colors.white,
+    funButtonTextColor: Colors.black,
+    funButtonSettingsColor: Colors.white,
+  ),
+};
+
+class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  ColorProfile _currentProfile = colorProfiles['Modrý']!;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadColorProfile();
+  }
+
+  Future<void> _loadColorProfile() async {
+    try {
+      final content = await FileUtils.readFromFile(moznostiFilename);
+      final lines = content.split('\n');
+      if (lines.length > 10) {
+        final profileName = lines[10].trim();
+        if (colorProfiles.containsKey(profileName)) {
+          setState(() {
+            _currentProfile = colorProfiles[profileName]!;
+          });
+        }
+      }
+    } catch (e) {}
+  }
+
+  void updateColorProfile(ColorProfile profile) {
+    setState(() {
+      _currentProfile = profile;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Nastavit barvu status baru
     SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.black, // barva pod notchem / status barem
-        statusBarIconBrightness: Brightness.light, // ikony bílé
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.black,
+        statusBarIconBrightness: Brightness.light,
       ),
     );
     return MaterialApp(
       title: 'Díkůvzdání',
       theme: ThemeData(
-        textSelectionTheme: const TextSelectionThemeData(
-          cursorColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-          selectionColor: barvaFunkcnichTlacitekVyberuTextuAKurzoruPrusvitnost,
-          selectionHandleColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: _currentProfile.translucent,
+          selectionColor: _currentProfile.selection,
+          selectionHandleColor: _currentProfile.translucent,
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
-            borderSide:
-                BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru),
+            borderSide: BorderSide(color: _currentProfile.translucent),
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(
-                color: barvaFunkcnichTlacitekVyberuTextuAKurzoru, width: 2),
+            borderSide: BorderSide(color: _currentProfile.translucent, width: 2),
           ),
           enabledBorder: OutlineInputBorder(
-            borderSide:
-                BorderSide(color: barvaFunkcnichTlacitekVyberuTextuAKurzoru),
+            borderSide: BorderSide(color: _currentProfile.translucent),
           ),
         ),
         primarySwatch: Colors.blue,
         brightness: Brightness.dark,
       ),
-      home: const MainActivity(),
+      home: MainActivity(colorProfile: _currentProfile, onProfileChanged: updateColorProfile),
       locale: const Locale('cs'),
-      supportedLocales: const [
-        Locale('cs'),
-        Locale('en'),
-      ],
+      supportedLocales: const [Locale('cs'), Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -79,7 +177,14 @@ class MyApp extends StatelessWidget {
 }
 
 class MainActivity extends StatefulWidget {
-  const MainActivity({Key? key}) : super(key: key);
+  final ColorProfile colorProfile;
+  final Function(ColorProfile) onProfileChanged;
+
+  const MainActivity({
+    Key? key,
+    required this.colorProfile,
+    required this.onProfileChanged,
+  }) : super(key: key);
 
   @override
   State<MainActivity> createState() => _MainActivityState();
@@ -94,10 +199,7 @@ class _MainActivityState extends State<MainActivity> {
   double _baseScaleFactor = 1.0;
   bool _sendMailChecked = false;
   String _dailyMotto = '';
-  Color barvaTextuNavTlacitek = Colors.white;
-  Color barvaTextuFunTlacitek = Colors.black;
-
-  bool _latin = false; // false = Česky, true = Latinsky
+  bool _latin = false;
   String _calendarId = '';
 
   @override
@@ -109,23 +211,20 @@ class _MainActivityState extends State<MainActivity> {
     _loadTodayEvents();
   }
 
+  ColorProfile get _currentProfile => widget.colorProfile;
   List<InlineSpan> _parseSimpleMarkdown(String text, {Color? baseColor}) {
     final spans = <InlineSpan>[];
     final defaultColor = baseColor ?? Colors.white;
-
-    // Rozděl podle řádků pro zachování odřádkování
     final lines = text.split('\n');
 
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
       int lastIndex = 0;
 
-      // Najdi všechny formátovací prvky na řádku
       final linkRegex = RegExp(r'\[([^\]]+)\]\(([^)]+)\)');
       final boldRegex = RegExp(r'\*\*(.+?)\*\*');
       final italicRegex = RegExp(r'\*(.+?)\*');
 
-      // Vytvoř seznam všech matches s jejich pozicemi a typy
       final allMatches = <Map<String, dynamic>>[];
 
       for (var m in linkRegex.allMatches(line)) {
@@ -135,7 +234,6 @@ class _MainActivityState extends State<MainActivity> {
         allMatches.add({'start': m.start, 'end': m.end, 'match': m, 'type': 'bold'});
       }
       for (var m in italicRegex.allMatches(line)) {
-        // Zkontroluj, zda není součástí bold (**text**)
         bool isPartOfBold = false;
         for (var boldMatch in allMatches.where((m) => m['type'] == 'bold')) {
           if (m.start >= boldMatch['start'] && m.end <= boldMatch['end']) {
@@ -148,10 +246,8 @@ class _MainActivityState extends State<MainActivity> {
         }
       }
 
-      // Seřaď podle pozice
       allMatches.sort((a, b) => a['start'].compareTo(b['start']));
 
-      // Odstraň překrývající se matches (upřednostni delší/dřívější)
       final filteredMatches = <Map<String, dynamic>>[];
       for (var match in allMatches) {
         bool overlaps = false;
@@ -171,7 +267,6 @@ class _MainActivityState extends State<MainActivity> {
         final match = matchData['match'] as Match;
         final type = matchData['type'] as String;
 
-        // Přidej text před matchem
         if (match.start > lastIndex) {
           spans.add(TextSpan(
             text: line.substring(lastIndex, match.start),
@@ -179,7 +274,6 @@ class _MainActivityState extends State<MainActivity> {
           ));
         }
 
-        // Zpracuj match podle typu
         if (type == 'link') {
           final linkText = match.group(1)!;
           final url = match.group(2)!;
@@ -191,8 +285,7 @@ class _MainActivityState extends State<MainActivity> {
               height: 1.4,
               decoration: TextDecoration.underline,
             ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => _launchUrlFromMarkdown(url),
+            recognizer: TapGestureRecognizer()..onTap = () => _launchUrlFromMarkdown(url),
           ));
         } else if (type == 'bold') {
           spans.add(TextSpan(
@@ -219,7 +312,6 @@ class _MainActivityState extends State<MainActivity> {
         lastIndex = match.end;
       }
 
-      // Přidej zbývající text na řádku
       if (lastIndex < line.length) {
         spans.add(TextSpan(
           text: line.substring(lastIndex),
@@ -227,7 +319,6 @@ class _MainActivityState extends State<MainActivity> {
         ));
       }
 
-      // Přidej odřádkování kromě posledního řádku
       if (i < lines.length - 1) {
         spans.add(const TextSpan(text: '\n'));
       }
@@ -289,28 +380,23 @@ class _MainActivityState extends State<MainActivity> {
     int lastIndex = 0;
 
     final colorRegex = RegExp(r'<(red|blue|green|orange|purple|pink|yellow|grey)>(.*?)</\1>', dotAll: true);
-
     final matches = colorRegex.allMatches(text).toList();
 
     for (var match in matches) {
-      // Přidej text před barevným textem
       if (match.start > lastIndex) {
         final beforeText = text.substring(lastIndex, match.start);
         spans.addAll(_parseSimpleMarkdown(beforeText));
       }
 
-      // Přidej barevný text (může obsahovat další formátování)
       final colorName = match.group(1) ?? 'white';
       final color = _parseColor(colorName);
       final coloredText = match.group(2) ?? '';
 
-      // Parsuj markdown uvnitř barevného textu
       spans.addAll(_parseSimpleMarkdown(coloredText, baseColor: color));
 
       lastIndex = match.end;
     }
 
-    // Přidej zbývající text
     if (lastIndex < text.length) {
       final remainingText = text.substring(lastIndex);
       spans.addAll(_parseSimpleMarkdown(remainingText));
@@ -372,24 +458,19 @@ class _MainActivityState extends State<MainActivity> {
   Future<void> _loadTodayEvents() async {
     try {
       final now = DateTime.now();
-
-      // začátek a konec dne podle místního času
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
-      // načtení API key a calendarId z moznosti.txt
       final content = await FileUtils.readFromFile(moznostiFilename);
       final lines = content.split('\n');
       const apiKey = String.fromEnvironment('GOOGLE_API_KEY');
-      final calendarId = lines.length >  8? lines[8].trim() : '';
+      final calendarId = lines.length > 8 ? lines[8].trim() : '';
 
       if (apiKey.isEmpty || calendarId.isEmpty) {
-        print('❌ API key nebo Calendar ID nejsou nastaveny.');
         setState(() => _todayEvents = []);
         return;
       }
 
-      // 💡 Tady je klíč: převeď čas do formátu s časovou zónou
       String formatWithTimezone(DateTime dt) {
         final duration = dt.timeZoneOffset;
         final hours = duration.inHours.abs().toString().padLeft(2, '0');
@@ -401,15 +482,12 @@ class _MainActivityState extends State<MainActivity> {
       final timeMin = formatWithTimezone(startOfDay);
       final timeMax = formatWithTimezone(endOfDay);
 
-      final url =
-          'https://www.googleapis.com/calendar/v3/calendars/$calendarId/events'
+      final url = 'https://www.googleapis.com/calendar/v3/calendars/$calendarId/events'
           '?key=$apiKey'
           '&timeMin=${Uri.encodeComponent(timeMin)}'
           '&timeMax=${Uri.encodeComponent(timeMax)}'
           '&singleEvents=true'
           '&orderBy=startTime';
-
-      print('🔎 Fetching events: $url');
 
       final response = await http.get(Uri.parse(url));
 
@@ -427,22 +505,15 @@ class _MainActivityState extends State<MainActivity> {
         }).join(' * ');
 
         setState(() {
-          _todayEvents = [
-            {'summary': joinedEvents}
-          ];
+          _todayEvents = [{'summary': joinedEvents}];
         });
       } else {
-        print('❌ Chyba načítání kalendáře: ${response.statusCode}');
-        print(response.body);
         setState(() => _todayEvents = []);
       }
     } catch (e) {
-      print('❌ Chyba: $e');
       setState(() => _todayEvents = []);
     }
   }
-
-
 
   Future<void> _loadFontSize() async {
     try {
@@ -462,16 +533,13 @@ class _MainActivityState extends State<MainActivity> {
       if (lines.length > 9) {
         _latin = lines[9].trim().toLowerCase() == 'true';
       }
-    } catch (e) {
-      // Default value
-    }
+    } catch (e) {}
   }
 
   Future<void> _loadDailyMotto() async {
     try {
       final content = await FileUtils.readFromFile(moznostiFilename);
-      final lines =
-          content.split('\n').where((line) => line.trim().isNotEmpty).toList();
+      final lines = content.split('\n').where((line) => line.trim().isNotEmpty).toList();
       final dayOfWeek = DateTime.now().weekday;
 
       if (lines.isNotEmpty) {
@@ -501,14 +569,8 @@ class _MainActivityState extends State<MainActivity> {
     );
 
     if (_sendMailChecked) {
-      final shareContent =
-          '${_notesController.text}\n\n${_intentionsController.text}';
-
-      await Share.share(
-        shareContent,
-        subject: 'ZalohaDikuvzdani',
-      );
-
+      final shareContent = '${_notesController.text}\n\n${_intentionsController.text}';
+      await Share.share(shareContent, subject: 'ZalohaDikuvzdani');
       setState(() => _sendMailChecked = false);
     }
   }
@@ -522,14 +584,8 @@ class _MainActivityState extends State<MainActivity> {
           title: RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
-              text: _dailyMotto.isNotEmpty
-                  ? _dailyMotto
-                  : 'Cor Mariae dulcissimum, iter para tutum',
-              style: const TextStyle(
-                fontSize: 15,
-                fontStyle: FontStyle.italic,
-                color: Colors.white,
-              ),
+              text: _dailyMotto.isNotEmpty ? _dailyMotto : 'Cor Mariae dulcissimum, iter para tutum',
+              style: const TextStyle(fontSize: 15, fontStyle: FontStyle.italic, color: Colors.white),
             ),
           ),
           backgroundColor: Colors.blueGrey[900],
@@ -540,8 +596,6 @@ class _MainActivityState extends State<MainActivity> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildButtonBar(),
-
-          // 🗓️ Události – pouze na home view, malé písmo, vlevo, malé mezery
           if (_currentView == 'home')
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
@@ -549,18 +603,12 @@ class _MainActivityState extends State<MainActivity> {
                 _todayEvents.isNotEmpty && _todayEvents.first['summary'] != null
                     ? _todayEvents.first['summary']!
                     : 'Dnes nejsou žádné události',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontStyle: FontStyle.italic,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontStyle: FontStyle.italic),
                 textAlign: TextAlign.left,
                 overflow: TextOverflow.ellipsis,
                 maxLines: 3,
               ),
             ),
-
-          // Přepínač jazyků (ponechán dle původního kódu)
           if (_currentView != 'home' &&
               _currentView != 'beforeMass' &&
               _currentView != 'afterMass' &&
@@ -571,20 +619,17 @@ class _MainActivityState extends State<MainActivity> {
               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
               child: Row(
                 children: [
-                  Expanded(child: Container()), // prázdný prostor vlevo
+                  Expanded(child: Container()),
                   const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () => _switchLanguage(!_latin),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12), // 🔹 poloviční výška
+                        backgroundColor: _currentProfile.solid,
+                        foregroundColor: _currentProfile.navButtonTextColor,
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                         textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                        // velikost textu
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         minimumSize: const Size(0, 0),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -593,46 +638,40 @@ class _MainActivityState extends State<MainActivity> {
                   ),
                 ],
               ),
-
             ),
-
-          // 📖 Hlavní obsah
-          Expanded(
-            child: _buildMainContent(),
-          ),
+          Expanded(child: _buildMainContent()),
         ],
       ),
     );
   }
-
-
-
-
 
   Widget _buildButtonBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 5, 8, 3),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Vypočítat šířku tlačítka (4 tlačítka vedle sebe s mezerami)
+          // 4 tlačítka na řádek, 3 mezery mezi nimi (spacing: 6)
           final buttonWidth = (constraints.maxWidth - (3 * 6)) / 4;
+
+          // Zajistíme, že šířka nebude záporná
+          final safeButtonWidth = buttonWidth > 0 ? buttonWidth : 80.0;
 
           return Wrap(
             spacing: 6,
             runSpacing: 6,
             children: [
-              _NavButton('Úmysly', _clickHome, barvaTextuNavTlacitek, buttonWidth),
-              _NavButton('Modlitby', () => _setView('prayers'), barvaTextuNavTlacitek, buttonWidth),
-              _NavButton('2. Žalm', () => _setView('psalm2'), barvaTextuNavTlacitek, buttonWidth),
-              _NavButton('Adoro te', () => _setView('adoro'), barvaTextuNavTlacitek, buttonWidth),
-              _NavButton('Trium', () => _setView('trium'), barvaTextuNavTlacitek, buttonWidth),
-              _NavButton('Quicumque', () => _setView('quicumque'), barvaTextuNavTlacitek, buttonWidth),
-              _NavButton('Maria', () => _setView('litanie'), barvaTextuNavTlacitek, buttonWidth),
-              _NavButton('Přede mší', () => _setView('beforeMass'), barvaTextuNavTlacitek, buttonWidth),
-              _NavButton('Po mši', () => _setView('afterMass'), barvaTextuNavTlacitek, buttonWidth),
-              _NavButton('Při mši', () => _setView('onMass'), barvaTextuNavTlacitek, buttonWidth),
-              _NavButton('Poznámky', () => _setView('notes'), barvaTextuFunTlacitek, buttonWidth),
-              _NavButton('Úmysly', () => _setView('intentions'), barvaTextuFunTlacitek, buttonWidth),
+              _NavButton('Úmysly', _clickHome, _currentProfile.navButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('Modlitby', () => _setView('prayers'), _currentProfile.navButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('2. Žalm', () => _setView('psalm2'), _currentProfile.navButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('Adoro te', () => _setView('adoro'), _currentProfile.navButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('Trium', () => _setView('trium'), _currentProfile.navButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('Quicumque', () => _setView('quicumque'), _currentProfile.navButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('Maria', () => _setView('litanie'), _currentProfile.navButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('Přede mší', () => _setView('beforeMass'), _currentProfile.navButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('Po mší', () => _setView('afterMass'), _currentProfile.navButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('Při mší', () => _setView('onMass'), _currentProfile.navButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('Poznámky', () => _setView('notes'), _currentProfile.funButtonTextColor, safeButtonWidth, _currentProfile.solid),
+              _NavButton('Úmysly', () => _setView('intentions'), _currentProfile.funButtonTextColor, safeButtonWidth, _currentProfile.solid),
             ],
           );
         },
@@ -669,34 +708,20 @@ class _MainActivityState extends State<MainActivity> {
     }
   }
 
-// ------------------------
-// HOME VIEW – pouze Markdown
-// ------------------------
   Widget _buildHomeView(String type) {
     final text = type == 'notes' ? _notesController.text : _intentionsController.text;
-
-    // Zpracuj Markdown a HTML tagy současně
-    String processedText = text;
-
-    // Převeď jednoduché color tagy
-    // Regex najde <red>text</red>, <blue>text</blue> atd.
     final colorRegex = RegExp(r'<(red|blue|green|orange|purple|pink|yellow|grey)>(.*?)</\1>', dotAll: true);
-    final matches = colorRegex.allMatches(processedText);
+    final matches = colorRegex.allMatches(text);
 
-    // Pokud jsou nějaké barvy, použij custom builder
     if (matches.isNotEmpty) {
       return Container(
         color: Colors.black,
         padding: const EdgeInsets.all(12),
-        child: SingleChildScrollView(
-          child: _buildColoredMarkdown(text),
-        ),
+        child: SingleChildScrollView(child: _buildColoredMarkdown(text)),
       );
     }
 
-    // Standardní Markdown bez barev
     final formattedText = text.replaceAll('\n', '  \n');
-
     return Container(
       color: Colors.black,
       padding: const EdgeInsets.all(12),
@@ -715,14 +740,9 @@ class _MainActivityState extends State<MainActivity> {
     );
   }
 
-
-// ------------------------
-// EDITABLE VIEW – Markdown s toolbar a funkcemi
-// ------------------------
   Widget _buildEditableView(String type) {
     final controller = type == 'notes' ? _notesController : _intentionsController;
 
-    // Funkce pro toolbar
     void wrapSelection(String left, String right) {
       final sel = controller.selection;
       final text = controller.text;
@@ -736,39 +756,19 @@ class _MainActivityState extends State<MainActivity> {
 
     return Column(
       children: [
-        // Toolbar pro Markdown
         if (type == 'intentions')
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(Icons.format_bold),
-                  color: Colors.white,
-                  onPressed: () => wrapSelection('**', '**'),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.format_italic),
-                  color: Colors.white,
-                  onPressed: () => wrapSelection('*', '*'),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.link),
-                  color: Colors.white,
-                  onPressed: () => wrapSelection('[', '](url)'),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.format_list_bulleted),
-                  color: Colors.white,
-                  onPressed: () => wrapSelection('- ', ''),
-                ),
-                // 🎨 Tlačítko pro barvy
+                IconButton(icon: const Icon(Icons.format_bold), color: Colors.white, onPressed: () => wrapSelection('**', '**')),
+                IconButton(icon: const Icon(Icons.format_italic), color: Colors.white, onPressed: () => wrapSelection('*', '*')),
+                IconButton(icon: const Icon(Icons.link), color: Colors.white, onPressed: () => wrapSelection('[', '](url)')),
+                IconButton(icon: const Icon(Icons.format_list_bulleted), color: Colors.white, onPressed: () => wrapSelection('- ', '')),
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.palette, color: Colors.white),
                   color: Colors.grey[800],
-                  onSelected: (color) {
-                    wrapSelection('<$color>', '</$color>');
-                  },
+                  onSelected: (color) => wrapSelection('<$color>', '</$color>'),
                   itemBuilder: (context) => [
                     _buildColorMenuItem('Červená', 'red', Colors.red),
                     _buildColorMenuItem('Modrá', 'blue', Colors.blue),
@@ -783,8 +783,6 @@ class _MainActivityState extends State<MainActivity> {
               ],
             ),
           ),
-
-        // Editor
         Expanded(
           child: TextField(
             controller: controller,
@@ -799,48 +797,39 @@ class _MainActivityState extends State<MainActivity> {
             ),
           ),
         ),
-
-        // Dolní tlačítka
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 🔹 NASTAVENÍ
               Expanded(
                 child: ElevatedButton(
                   onPressed: _showMoznostiDialog,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                    foregroundColor: barvaTextuNavTlacitek,
+                    backgroundColor: _currentProfile.translucent,
+                    foregroundColor: _currentProfile.funButtonSettingsColor,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Text('NASTAVENÍ'),
                 ),
               ),
               const SizedBox(width: 6),
-              // 🔹 TÉMATA
               Expanded(
                 child: ElevatedButton(
                   onPressed: _showTemataDialog,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                    foregroundColor: barvaTextuNavTlacitek,
+                    backgroundColor: _currentProfile.translucent,
+                    foregroundColor: _currentProfile.funButtonSettingsColor,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Text('TÉMATA'),
                 ),
               ),
               const SizedBox(width: 6),
-              // 🔹 Checkbox ZÁLOHOVAT
               Row(
                 children: [
                   Checkbox(
@@ -850,29 +839,19 @@ class _MainActivityState extends State<MainActivity> {
                     checkColor: Colors.black,
                     visualDensity: VisualDensity.compact,
                   ),
-                  const Text(
-                    'ZÁLOHOVAT',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
+                  const Text('ZÁLOHOVAT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                 ],
               ),
               const SizedBox(width: 6),
-              // 🔹 ULOŽIT
               Expanded(
                 child: ElevatedButton(
                   onPressed: _saveFiles,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                    foregroundColor: barvaTextuNavTlacitek,
+                    backgroundColor: _currentProfile.translucent,
+                    foregroundColor: _currentProfile.funButtonSettingsColor,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Text('ULOŽIT'),
                 ),
@@ -884,10 +863,6 @@ class _MainActivityState extends State<MainActivity> {
     );
   }
 
-
-
-
-// --- dialog TÉMATA (7 políček + ZRUŠIT a ULOŽIT) ---
   Future<void> _showTemataDialog() async {
     String content = await FileUtils.readFromFile(moznostiFilename);
     List<String> lines = content.split('\n');
@@ -914,86 +889,53 @@ class _MainActivityState extends State<MainActivity> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('TÉMATA',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold)),
+                const Text('TÉMATA', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: _currentProfile.solid,
+                        foregroundColor: _currentProfile.navButtonTextColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ZRUŠIT',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ZRUŠIT', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        // Načti celý obsah
                         final oldContent = await FileUtils.readFromFile(moznostiFilename);
                         final oldLines = oldContent.split('\n');
-
-                        // Ujisti se, že má soubor aspoň 11 řádků
                         while (oldLines.length < 11) {
                           oldLines.add('');
                         }
-
-                        // Ulož 7 mott se sanitizací
                         for (int i = 0; i < 7; i++) {
                           String clean = controllers[i].text.replaceAll(RegExp(r'[\n\r\t]'), '');
                           if (clean.length > 200) clean = clean.substring(0, 200);
                           oldLines[i] = clean;
                         }
-
-                        // Znovu slož soubor
                         final newContent = oldLines.join('\n');
-
-                        // Zapiš zpět
                         await FileUtils.writeToFile(newContent, moznostiFilename);
-
-                        // Obnov motto dne
                         await _loadDailyMotto();
-
                         if (context.mounted) {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('TÉMATA ULOŽENA'),
-                              backgroundColor: Colors.amber,
-                            ),
+                            const SnackBar(content: Text('TÉMATA ULOŽENA'), backgroundColor: Colors.amber),
                           );
                         }
                       },
-
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                        foregroundColor: barvaTextuNavTlacitek,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: _currentProfile.translucent,
+                        foregroundColor: _currentProfile.funButtonSettingsColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ULOŽIT',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 ...List.generate(7, (i) {
-                  final days = [
-                    'Pondělí',
-                    'Úterý',
-                    'Středa',
-                    'Čtvrtek',
-                    'Pátek',
-                    'Sobota',
-                    'Neděle'
-                  ];
+                  final days = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
                   final currentDay = DateTime.now().weekday - 1;
                   final isToday = i == currentDay;
                   return Padding(
@@ -1004,12 +946,9 @@ class _MainActivityState extends State<MainActivity> {
                         Text(
                           '${days[i]}${isToday ? ' (DNES)' : ''}',
                           style: TextStyle(
-                            color: isToday
-                                ? barvaFunkcnichTlacitekVyberuTextuAKurzoru
-                                : Colors.white70,
+                            color: isToday ? _currentProfile.translucent : Colors.white70,
                             fontSize: 12,
-                            fontWeight:
-                                isToday ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -1020,8 +959,7 @@ class _MainActivityState extends State<MainActivity> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8)),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                         ),
                       ],
@@ -1034,60 +972,40 @@ class _MainActivityState extends State<MainActivity> {
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: _currentProfile.solid,
+                        foregroundColor: _currentProfile.navButtonTextColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ZRUŠIT',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ZRUŠIT', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                     ElevatedButton(
                       onPressed: () async {
-                        // Načti celý obsah
                         final oldContent = await FileUtils.readFromFile(moznostiFilename);
                         final oldLines = oldContent.split('\n');
-
-                        // Ujisti se, že má soubor aspoň 11 řádků
-                        while (oldLines.length < 10) {
+                        while (oldLines.length < 11) {
                           oldLines.add('');
                         }
-
-                        // Ulož 7 mott se sanitizací
                         for (int i = 0; i < 7; i++) {
                           String clean = controllers[i].text.replaceAll(RegExp(r'[\n\r\t]'), '');
                           if (clean.length > 200) clean = clean.substring(0, 200);
                           oldLines[i] = clean;
                         }
-
-                        // Znovu slož soubor
                         final newContent = oldLines.join('\n');
-
-                        // Zapiš zpět
                         await FileUtils.writeToFile(newContent, moznostiFilename);
-
-                        // Obnov motto dne
                         await _loadDailyMotto();
-
                         if (context.mounted) {
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('TÉMATA ULOŽENA'),
-                              backgroundColor: Colors.amber,
-                            ),
+                            const SnackBar(content: Text('TÉMATA ULOŽENA'), backgroundColor: Colors.amber),
                           );
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                        foregroundColor: barvaTextuNavTlacitek,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: _currentProfile.translucent,
+                        foregroundColor: _currentProfile.funButtonSettingsColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('ULOŽIT',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -1099,18 +1017,23 @@ class _MainActivityState extends State<MainActivity> {
     );
   }
 
-// --- dialog NASTAVENÍ (jen velikost písma) ---
   Future<void> _showMoznostiDialog() async {
     String content = await FileUtils.readFromFile(moznostiFilename);
     List<String> lines = content.split('\n');
-
-    // zajistit, aby bylo alespoň 11 řádků
     while (lines.length < 11) lines.add('');
 
-    // Předvyplněné hodnoty
     String selectedSize = (lines.length > 7 && lines[7].trim().isNotEmpty) ? lines[7].trim() : '1.0';
     String calendarId = (lines.length > 8) ? lines[8].trim() : '';
     bool latinFlag = (lines.length > 9) ? lines[9].trim().toLowerCase() == 'true' : false;
+
+    // 🔹 OPRAVA: Ověř, že profil existuje, jinak nastav výchozí
+    String selectedProfile = 'Modrý'; // výchozí
+    if (lines.length > 10 && lines[10].trim().isNotEmpty) {
+      final profileName = lines[10].trim();
+      if (colorProfiles.containsKey(profileName)) {
+        selectedProfile = profileName;
+      }
+    }
 
     if (!mounted) return;
 
@@ -1120,6 +1043,7 @@ class _MainActivityState extends State<MainActivity> {
         String tempSize = selectedSize;
         String tempCalendarId = calendarId;
         bool tempLatin = latinFlag;
+        String tempProfile = selectedProfile;
 
         return Dialog(
           backgroundColor: Colors.grey[900],
@@ -1129,19 +1053,12 @@ class _MainActivityState extends State<MainActivity> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('NASTAVENÍ',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold)),
+                  const Text('NASTAVENÍ', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-
-                  // 1️⃣ Velikost textu
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Velikost textu',
-                          style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const Text('Velikost textu', style: TextStyle(color: Colors.white70, fontSize: 12)),
                       const SizedBox(height: 4),
                       StatefulBuilder(
                         builder: (context, setStateDropdown) {
@@ -1167,8 +1084,6 @@ class _MainActivityState extends State<MainActivity> {
                     ],
                   ),
                   const SizedBox(height: 8),
-
-                  // 2️⃣ Defaultní jazyk (latina)
                   Row(
                     children: [
                       const Expanded(child: Text('Použít latinu jako výchozí:', style: TextStyle(color: Colors.white70))),
@@ -1185,8 +1100,47 @@ class _MainActivityState extends State<MainActivity> {
                     ],
                   ),
                   const SizedBox(height: 8),
-
-                  // 4️⃣ API Key
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Barevný profil', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const SizedBox(height: 4),
+                      StatefulBuilder(
+                        builder: (context, setStateProfile) {
+                          return DropdownButton<String>(
+                            value: tempProfile,
+                            dropdownColor: Colors.grey[800],
+                            isExpanded: true,
+                            items: colorProfiles.keys.map((name) {
+                              final profile = colorProfiles[name]!;
+                              return DropdownMenuItem(
+                                value: name,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: profile.solid,
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: Colors.white30),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(name, style: const TextStyle(color: Colors.white)),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) setStateProfile(() => tempProfile = value);
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   TextField(
                     decoration: const InputDecoration(
                       labelText: 'Google kalendář ID - NESAHAT!!!',
@@ -1199,29 +1153,26 @@ class _MainActivityState extends State<MainActivity> {
                     controller: TextEditingController(text: tempCalendarId),
                     onChanged: (val) => tempCalendarId = val,
                   ),
-
                   const SizedBox(height: 12),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       ElevatedButton(
                         onPressed: () => Navigator.pop(context),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueGrey,
-                          foregroundColor: Colors.white,
+                          backgroundColor: _currentProfile.solid,
+                          foregroundColor: _currentProfile.navButtonTextColor,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: const Text('ZRUŠIT', style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                       ElevatedButton(
                         onPressed: () async {
-                          // upravit řádky 8–10
-                          while (lines.length < 10) lines.add('');
+                          while (lines.length < 11) lines.add('');
                           lines[7] = tempSize;
                           lines[8] = tempCalendarId;
                           lines[9] = tempLatin.toString();
-
+                          lines[10] = tempProfile;
 
                           await FileUtils.writeToFile(lines.join('\n'), moznostiFilename);
 
@@ -1231,18 +1182,18 @@ class _MainActivityState extends State<MainActivity> {
                             _latin = tempLatin;
                           });
 
-                          Navigator.pop(context);
+                          if (colorProfiles.containsKey(tempProfile)) {
+                            widget.onProfileChanged(colorProfiles[tempProfile]!);
+                          }
 
+                          Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('NASTAVENÍ ULOŽENO'),
-                              backgroundColor: Colors.amber,
-                            ),
+                            const SnackBar(content: Text('NASTAVENÍ ULOŽENO'), backgroundColor: Colors.amber),
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: barvaFunkcnichTlacitekVyberuTextuAKurzoru,
-                          foregroundColor: Colors.black,
+                          backgroundColor: _currentProfile.translucent,
+                          foregroundColor: _currentProfile.funButtonSettingsColor,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: const Text('ULOŽIT', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1258,12 +1209,8 @@ class _MainActivityState extends State<MainActivity> {
     );
   }
 
-
-
   Widget _buildTextView(String viewId) {
-    final path = _latin
-        ? _latinVariant('assets/texts/$viewId.txt') // např. psalm2_lat.txt
-        : 'assets/texts/$viewId.txt';
+    final path = _latin ? _latinVariant('assets/texts/$viewId.txt') : 'assets/texts/$viewId.txt';
 
     return FutureBuilder<String>(
       future: rootBundle.loadString(path),
@@ -1273,10 +1220,7 @@ class _MainActivityState extends State<MainActivity> {
         }
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
-          child: HtmlText(
-            snapshot.data ?? '',
-            scaleFactor: _scaleFactor,
-          ),
+          child: HtmlText(snapshot.data ?? '', scaleFactor: _scaleFactor),
         );
       },
     );
@@ -1292,18 +1236,16 @@ class _MainActivityState extends State<MainActivity> {
   void _launchUrl(String href) {}
 }
 
-Widget _NavButton(String label, VoidCallback onPressed, Color textColor, double width) {
+Widget _NavButton(String label, VoidCallback onPressed, Color textColor, double width, Color backgroundColor) {
   return SizedBox(
     width: width,
-    height: 42, // Fixní výška tlačítka
+    height: 42,
     child: ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blueGrey,
+        backgroundColor: backgroundColor,
         foregroundColor: textColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         minimumSize: const Size(0, 0),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1314,10 +1256,7 @@ Widget _NavButton(String label, VoidCallback onPressed, Color textColor, double 
           label.toUpperCase(),
           maxLines: 1,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
         ),
       ),
     ),
@@ -1328,18 +1267,12 @@ class HtmlText extends StatelessWidget {
   final String htmlContent;
   final double scaleFactor;
 
-  const HtmlText(this.htmlContent, {required this.scaleFactor, Key? key})
-      : super(key: key);
+  const HtmlText(this.htmlContent, {required this.scaleFactor, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-
-    // Nastavit barvu status baru
     SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.black, // barva pod notchem / status barem
-        statusBarIconBrightness: Brightness.light, // ikony bílé
-      ),
+      const SystemUiOverlayStyle(statusBarColor: Colors.black, statusBarIconBrightness: Brightness.light),
     );
     final document = html_parser.parse(htmlContent);
     final body = document.body;
@@ -1376,13 +1309,7 @@ class HtmlText extends StatelessWidget {
       final text = node.text ?? '';
       if (text.isEmpty) return null;
 
-      return TextSpan(
-        text: text,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 19 * scaleFactor,
-        ),
-      );
+      return TextSpan(text: text, style: TextStyle(color: Colors.white, fontSize: 19 * scaleFactor));
     }
 
     if (node is! dom.Element) return null;
@@ -1396,69 +1323,33 @@ class HtmlText extends StatelessWidget {
 
         return TextSpan(
           text: text,
-          style: TextStyle(
-            color: linkColor,
-            fontSize: 19 * scaleFactor,
-            decoration: TextDecoration.underline,
-          ),
+          style: TextStyle(color: linkColor, fontSize: 19 * scaleFactor, decoration: TextDecoration.underline),
           recognizer: TapGestureRecognizer()..onTap = () => _launchUrl(href),
         );
 
       case 'b':
       case 'strong':
-        return TextSpan(
-          text: element.text,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 19 * scaleFactor,
-            fontWeight: FontWeight.bold,
-          ),
-        );
+        return TextSpan(text: element.text, style: TextStyle(color: Colors.white, fontSize: 19 * scaleFactor, fontWeight: FontWeight.bold));
 
       case 'i':
       case 'em':
-        return TextSpan(
-          text: element.text,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 19 * scaleFactor,
-            fontStyle: FontStyle.italic,
-          ),
-        );
+        return TextSpan(text: element.text, style: TextStyle(color: Colors.white, fontSize: 19 * scaleFactor, fontStyle: FontStyle.italic));
 
       case 'font':
         final colorAttr = element.attributes['color'] ?? 'white';
         final color = _parseColor(colorAttr);
         final text = element.text;
 
-        return TextSpan(
-          text: text,
-          style: TextStyle(
-            color: color,
-            fontSize: 19 * scaleFactor,
-          ),
-        );
+        return TextSpan(text: text, style: TextStyle(color: color, fontSize: 19 * scaleFactor));
 
       case 'br':
         return const TextSpan(text: '\n');
 
       case 'p':
-        return TextSpan(
-          text: '\n${element.text}\n',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 19 * scaleFactor,
-          ),
-        );
+        return TextSpan(text: '\n${element.text}\n', style: TextStyle(color: Colors.white, fontSize: 19 * scaleFactor));
 
       default:
-        return TextSpan(
-          text: element.text,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 19 * scaleFactor,
-          ),
-        );
+        return TextSpan(text: element.text, style: TextStyle(color: Colors.white, fontSize: 19 * scaleFactor));
     }
   }
 
@@ -1511,7 +1402,6 @@ class HtmlText extends StatelessWidget {
   }
 }
 
-// 📄 názvy souborů používaných pro ukládání dat
 const String notesFilename = 'notes.txt';
 const String intentionsFilename = 'intentions.txt';
 const String moznostiFilename = 'moznosti.txt';
@@ -1538,16 +1428,17 @@ class FileUtils {
           return 'Zpytování svědomí';
         }
         if (fileName == 'moznosti.txt') {
-            return 'Sancta Maria, Mater misericordiae, succurre animabus in purgatorio, den stráže, otec, bratři\n'
-                'Sancti Angeli Custodes nostri, deféndite nos, kolegové\n'
-                'Sancte Ioseph, ora pro nobis, rodina, rodiče\n'
-                'Iesu, in te confido, povolání, věrnost\n'
-                'Per crucem et passionem tuam, Domine, libera nos, kamarádi\n'
-                'Cor Mariae dulcissimum, iter para tutum, apoštoláty\n'
-                'Gloria Patri, et Filio, et Spiritui Sancto, díkůvzdání, papež\n'
-                '1.0\n'      // řádek 8: velikost písma
-                'k9grn9pcub347543afce5uiv50@group.calendar.google.com\n'         // řádek 9: calendar ID (prázdné)
-                'false';     // řádek 10: latina (false)
+          return 'Sancta Maria, Mater misericordiae, succurre animabus in purgatorio, den stráže, otec, bratři\n'
+              'Sancti Angeli Custodes nostri, deféndite nos, kolegové\n'
+              'Sancte Ioseph, ora pro nobis, rodina, rodiče\n'
+              'Iesu, in te confido, povolání, věrnost\n'
+              'Per crucem et passionem tuam, Domine, libera nos, kamarádi\n'
+              'Cor Mariae dulcissimum, iter para tutum, apoštoláty\n'
+              'Gloria Patri, et Filio, et Spiritui Sancto, díkůvzdání, papež\n'
+              '1.0\n'
+              'k9grn9pcub347543afce5uiv50@group.calendar.google.com\n'
+              'false\n'
+              'Modrý';
         }
         return '';
       }
@@ -1576,9 +1467,10 @@ class FileUtils {
             'Per crucem et passionem tuam, Domine, libera nos, kamarádi\n'
             'Cor Mariae dulcissimum, iter para tutum, apoštoláty\n'
             'Gloria Patri, et Filio, et Spiritui Sancto, díkůvzdání, papež\n'
-            '1.0\n'      // řádek 8: velikost písma
-            'k9grn9pcub347543afce5uiv50@group.calendar.google.com\n'         // řádek 9: calendar ID (prázdné)
-            'false';     //
+            '1.0\n'
+            'k9grn9pcub347543afce5uiv50@group.calendar.google.com\n'
+            'false\n'
+            'Modrý';
       }
       return '';
     }
